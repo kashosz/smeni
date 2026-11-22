@@ -241,7 +241,7 @@ input,select,textarea{background:light-dark(rgba(255,255,255,.6),rgba(255,255,25
 .nowbar button{flex:none;display:flex;align-items:center;gap:7px;height:34px;padding:0 12px 0 6px;border-radius:999px;font-size:13px;font-weight:600;white-space:nowrap;background:light-dark(rgba(255,255,255,.5),rgba(255,255,255,.07));border:1.5px solid var(--edge)}
 .nowbar b{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:12px;background:color-mix(in srgb,var(--b,#999) 22%,transparent);color:color-mix(in srgb,var(--b,#999) 70%,var(--ink))}
 .nowbar small{color:var(--mute);font-weight:500;font-size:12px}
-#toast{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top));transform:translateX(-50%);z-index:20;display:flex;align-items:center;gap:12px;max-width:calc(100% - 24px);padding:8px 8px 8px 16px;border-radius:999px;font-size:14px;font-weight:600;background:light-dark(rgba(30,32,38,.88),rgba(250,250,252,.92));color:light-dark(#fff,#111);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);box-shadow:0 12px 30px rgba(0,0,0,.25)}
+#toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:20;display:flex;align-items:center;gap:12px;max-width:calc(100% - 24px);padding:8px 8px 8px 16px;border-radius:999px;font-size:14px;font-weight:600;background:light-dark(rgba(30,32,38,.88),rgba(250,250,252,.92));color:light-dark(#fff,#111);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);box-shadow:0 12px 30px rgba(0,0,0,.25)}
 #toast span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #toast button{flex:none;height:34px;padding:0 14px;border-radius:999px;background:linear-gradient(180deg,#f59a86,#ea7360);color:#fff;font-weight:700;font-size:14px}
 #quick{position:fixed;z-index:15;display:flex;gap:6px;padding:7px;border-radius:999px;transform-origin:var(--ox,50%) var(--oy,100%)}
@@ -285,6 +285,11 @@ input,select,textarea{background:light-dark(rgba(255,255,255,.6),rgba(255,255,25
 #mprev .note2{font-size:12px}#mprev .li{min-height:34px;font-size:13px}#mapply,#mpick{min-height:42px;font-size:14px}
 #sheet{padding-top:6px}#sdate{font-size:20px}#sbase{min-height:24px;font-size:13px}
 #p-brush .seg2{margin-right:44px}
+#ubtn{transition:opacity .25s,transform .35s cubic-bezier(.34,1.56,.64,1)}#ubtn.off{opacity:.35}
+#ubtn i{position:absolute;top:-2px;right:-2px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--coral);color:#fff;font-size:11px;font-weight:800;font-style:normal;display:grid;place-items:center}
+#ubtn{position:relative}
+.top .rb{width:40px;height:40px}.top{gap:6px}#mtitle{font-size:clamp(19px,5.8vw,28px)!important}#ytitle{font-size:clamp(14px,4.2vw,20px)}.mtb{gap:5px;min-width:0;overflow:hidden}.mtb>*{flex:none;white-space:nowrap}#mtitle{font-size:clamp(18px,5.3vw,28px)!important}
+@media(max-width:380px){.top .rb{width:36px;height:36px}}
 /* brush panel: keep the whole month visible above it */
 body.brushing .app{padding-bottom:calc(88px + var(--pb,0px) + env(safe-area-inset-bottom));transition:padding-bottom .35s cubic-bezier(.22,1,.36,1)}
 .app{transition:padding-bottom .35s cubic-bezier(.22,1,.36,1)}
@@ -299,6 +304,7 @@ body.brushing #panel{padding-bottom:10px}
 <div class="top"><div class="mt"><button class="mtb" id="mtb" aria-label="Годишен изглед"><h2 id="mtitle"></h2><span id="ytitle"></span><svg class="chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button><span id="st">Свързване…</span></div>
 <button class="rb" id="prev" aria-label="Предишен месец"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
 <button class="rb" id="next" aria-label="Следващ месец"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
+<button class="rb" id="ubtn" aria-label="Отмени последната промяна"><svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-3"/></svg></button>
 <button class="rb" id="fs" aria-label="Цял екран"><svg viewBox="0 0 24 24"><path id="fsi" d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button></div>
 <div class="nowbar" id="nowbar"></div>
 <div id="banner"></div>
@@ -469,18 +475,33 @@ const unitW=(t,n)=>t.k==='vac'?(n===1?'работен ден':'работни д
 function nextWork(k,n){const out=[];for(let i=0,x=k;out.length<n&&i<120;i++,x=kadd(x,1)){const bt=T(base(x));if(bt&&bt.k==='work')out.push(x)}return out}
 /* undo + toast */
 let undoSnap=null,toastT=null;
-function change(msg,fn){const before=JSON.stringify(S);fn();save();toast(msg,before)}
-function toast(msg,before){const el=$('#toast');undoSnap=before||null;el.innerHTML=`<span>${esc(msg)}</span>${before?'<button id="undo">Отмени</button>':''}`;
-  const was=!el.hidden;el.hidden=false;if(!was)anim(el,[{transform:'translate(-50%,-30px) scale(.9)',opacity:0},{transform:'translate(-50%,0)',opacity:1}],{duration:420,easing:SP});
-  clearTimeout(toastT);toastT=setTimeout(hideToast,before?5000:2200)}
-function hideToast(){const el=$('#toast');if(el.hidden)return;const a=anim(el,[{opacity:1},{transform:'translate(-50%,-20px)',opacity:0}],{duration:220,fill:'forwards'});const f=()=>{el.hidden=true;undoSnap=null;a&&a.cancel()};if(a)a.onfinish=f;else f()}
+/* история: всяка промяна се пази, отменя се по всяко време с ↶ */
+let HIST=[],REDO=[],lastBody=null,lastPushT=0,pendLabel=null;
+try{HIST=JSON.parse(localStorage.getItem('wcal_hist')||'[]')}catch(e){HIST=[]}
+const body=()=>{const o=Object.assign({},S);delete o.ts;return JSON.stringify(o)};
+lastBody=body();
+function persistH(){try{localStorage.setItem('wcal_hist',JSON.stringify(HIST.slice(-40)))}catch(e){}}
+function record(){const cur=body();if(lastBody!=null&&cur!==lastBody){const now=Date.now(),auto=pendLabel==null;
+    if(!(auto&&HIST.length&&HIST[HIST.length-1].auto&&now-lastPushT<2000)){HIST.push({l:pendLabel||'Промяна в настройките',s:lastBody,auto});if(HIST.length>40)HIST.shift()}
+    REDO=[];lastPushT=now;persistH()}
+  pendLabel=null;lastBody=cur;updUndo()}
+function updUndo(){const b=$('#ubtn');if(!b)return;b.classList.toggle('off',!HIST.length);b.innerHTML=b.innerHTML.replace(/<i>.*<\/i>/,'')+(HIST.length?`<i>${HIST.length}</i>`:'')}
+function restore(str){S=JSON.parse(str);migrate();S.ts=Date.now();lastBody=body();local();persistH();renderAll();if(cur){sheetTypes();const o=S.days[cur]||{};$('#sot').value=o.ot||'';$('#snote').value=o.note||''}updUndo()}
+function doUndo(){if(!HIST.length){toast('Няма промени за отмяна');return}const e=HIST.pop();REDO.push({l:e.l,s:body()});restore(e.s);toast('Отменено: '+e.l,'redo');buzz(15)}
+function doRedo(){if(!REDO.length)return;const e=REDO.pop();HIST.push({l:e.l,s:body()});restore(e.s);toast('Върнато: '+e.l,'undo')}
+function change(msg,fn){pendLabel=msg||'Промяна';fn();save();if(msg)toast(msg,'undo')}
+function relabel(msg){if(HIST.length)HIST[HIST.length-1].l=msg;persistH();toast(msg,'undo')}
+function toast(msg,kind){const el=$('#toast');undoSnap=kind||null;el.innerHTML=`<span>${esc(msg)}</span>${kind==='undo'?'<button id="undo">Отмени</button>':kind==='redo'?'<button id="redo">Повтори</button>':''}`;
+  const was=!el.hidden;el.hidden=false;if(!was)anim(el,[{transform:'translate(-50%,30px) scale(.9)',opacity:0},{transform:'translate(-50%,0)',opacity:1}],{duration:420,easing:SP});
+  clearTimeout(toastT);toastT=setTimeout(hideToast,kind?5000:2200)}
+function hideToast(){const el=$('#toast');if(el.hidden)return;const a=anim(el,[{opacity:1},{transform:'translate(-50%,20px)',opacity:0}],{duration:220,fill:'forwards'});const f=()=>{el.hidden=true;undoSnap=null;a&&a.cancel()};if(a)a.onfinish=f;else f()}
 
 /* ---------- saving ---------- */
 let saveT=null;
 function setSt(s){$('#st').textContent=s}
 function stIdle(){setSt(navigator.onLine===false?'Без интернет · пази се на телефона':'✓ Пази се на телефона')}
 function local(){try{localStorage.setItem('wcal',JSON.stringify(S));return true}catch(e){return false}}
-function save(){S.ts=Date.now();if(!local()){setSt('Не се записа!');return}clearTimeout(saveT);setSt('Записано');saveT=setTimeout(stIdle,1500)}
+function save(){S.ts=Date.now();record();if(!local()){setSt('Не се записа!');return}clearTimeout(saveT);setSt('Записано');saveT=setTimeout(stIdle,1500)}
 function connect(){stIdle();try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}addEventListener('online',stIdle);addEventListener('offline',stIdle)}
 
 /* ---------- render ---------- */
@@ -635,7 +656,8 @@ document.addEventListener('click',e=>{
   const el=e.target.closest('button,a');if(!el)return;
   if(el.closest('#quick')){quickPick(el);return}
   buzz(7);
-  if(el.id==='undo'){if(undoSnap){S=JSON.parse(undoSnap);migrate();save();renderAll();if(cur)sheetTypes();toast('Отменено')}return}
+  if(el.id==='undo'||el.id==='ubtn'){doUndo();return}
+  if(el.id==='redo'){doRedo();return}
   if(el.id==='mtb'){setYear(!ui.year);return}
   if(el.dataset.ym!=null){setYear(false,+el.dataset.ym);return}
   if(el.dataset.go){const p=parse(el.dataset.go);const d=Math.sign((p.y-ui.y)*12+p.m-ui.m);ui.year=false;ui.y=p.y;ui.m=p.m;ui.dir=d;keepUI();renderAll();const c=$(`[data-k="${el.dataset.go}"]`);anim(c,[{transform:'scale(1)'},{transform:'scale(1.12)'},{transform:'none'}],{duration:500,easing:SP,fill:'none'});return}
@@ -651,7 +673,7 @@ document.addEventListener('click',e=>{
       let a=ui.rStart,b=k;if(b<a)[a,b]=[b,a];ui.rStart=null;const t=T(ui.brush);let n=0,days=0;
       if(['vac','comp','sick'].includes(t.k)){const P=leavePlan(a,t,0,b);n=P.cnt;change('',()=>P.out.forEach(([x,c])=>setT(x,c)))}
       else change('',()=>{for(let x=a;x<=b;x=kadd(x,1)){days++;setT(x,ui.brush)}});
-      toast(`${t.n} ${short(a)} – ${short(b)} · ${['vac','comp','sick'].includes(t.k)?n+' '+unitW(t,n):days+' дни'}`,undoSnap);
+      relabel(`${t.n} ${short(a)} – ${short(b)} · ${['vac','comp','sick'].includes(t.k)?n+' '+unitW(t,n):days+' дни'}`);
       renderAll();$('#grid').querySelectorAll('.c').forEach(c=>{const x=c.dataset.k;if(x>=a&&x<=b)anim(c,[{transform:'scale(.85)',opacity:.4},{transform:'none',opacity:1}],{duration:450,delay:(dnum(x)-dnum(a))*25,easing:SP})});return}
     if(ui.brush){const o=S.days[k],off=o&&o.t===ui.brush;change(`${short(k)}: ${off?'по график':T(ui.brush).n}`,()=>setT(k,off?null:ui.brush));ui.pop=k;renderAll()}else openDay(k);return}
   if(el.classList.contains('tb')){const c=el.dataset.c;if(eff(cur)===c)return;change(`${short(cur)}: ${T(c).n}`,()=>setT(cur,c));sheetTypes();anim($(`#stypes .tb[data-c="${CSS.escape(c)}"] b`),[{transform:'scale(.6)'},{transform:'scale(1.15)',offset:.6},{transform:'none'}],{duration:450,easing:SP,fill:'none'});return}
@@ -720,6 +742,7 @@ function showPanel(p){const prev=ui.panel,P=$('#panel'),tabs=$('.tabs');ui.panel
   else if(prev!==p){const d=TABS.indexOf(p)>TABS.indexOf(prev)?1:-1;anim(document.getElementById(id),[{transform:`translateX(${d*30}px)`,opacity:0},{transform:'none',opacity:1}],{duration:380})}
   revealPanel(id);keepUI()}
 ui.open=false;ui.year=false;ui.rStart=null;
+updUndo();
 try{new ResizeObserver(()=>{if(ui.panel==='brush'&&!$('#panel').hidden)document.body.style.setProperty('--pb',$('#panel').offsetHeight+'px')}).observe($('#panel'))}catch(e){}
 let qk=null;
 function showQuick(k,cell){qk=k;const q=$('#quick'),cv=eff(k);
