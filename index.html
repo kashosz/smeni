@@ -277,6 +277,21 @@ input,select,textarea{background:light-dark(rgba(255,255,255,.6),rgba(255,255,25
 .pay small{font-size:14px;color:var(--mute);font-weight:600}
 .tt{grid-column:1/-1;display:flex;gap:8px;align-items:center;font-size:13px;color:var(--mute)}
 .tt input{flex:1}
+.smore{margin-top:10px}.smore summary{font-size:14px;font-weight:600;color:var(--mute);padding:8px 4px;cursor:pointer;list-style:none}.smore summary::before{content:"+ "}.smore[open] summary::before{content:"− "}.smore summary::-webkit-details-marker{display:none}
+#stypes{margin:10px 0 4px;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+#stypes .tb{min-height:52px;font-size:11.5px;gap:3px;border-radius:14px}#stypes .tb b{width:26px;height:26px;font-size:13px}
+#smulti{margin-top:6px;padding:10px 12px}#smulti h3{font-size:14px;margin-bottom:6px}
+#smulti .rb{width:38px;height:38px}#mn{min-height:38px!important;font-size:18px!important}
+#mprev .note2{font-size:12px}#mprev .li{min-height:34px;font-size:13px}#mapply,#mpick{min-height:42px;font-size:14px}
+#sheet{padding-top:6px}#sdate{font-size:20px}#sbase{min-height:24px;font-size:13px}
+#p-brush .seg2{margin-right:44px}
+/* brush panel: keep the whole month visible above it */
+body.brushing .app{padding-bottom:calc(88px + var(--pb,0px) + env(safe-area-inset-bottom));transition:padding-bottom .35s cubic-bezier(.22,1,.36,1)}
+.app{transition:padding-bottom .35s cubic-bezier(.22,1,.36,1)}
+#p-brush h2{display:none}
+#p-brush .seg2{margin-bottom:8px}#p-brush .seg2 button{height:32px;font-size:13px}
+#p-brush #hint{margin:6px 4px 0;font-size:12.5px;min-height:0}
+body.brushing #panel{padding-bottom:10px}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}.c,#sheet,.ring .pr{transition:none;animation:none}}
 </style></head><body>
 <svg width="0" height="0" style="position:absolute"><defs><linearGradient id="vg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b7a6f5"/><stop offset=".5" stop-color="#f59a86"/><stop offset="1" stop-color="#8fdcb2"/></linearGradient></defs></svg>
@@ -349,10 +364,11 @@ input,select,textarea{background:light-dark(rgba(255,255,255,.6),rgba(255,255,25
 <div id="smulti" class="card2" hidden><h3 id="smt">Отпуск за няколко смени</h3>
 <div style="display:flex;align-items:center;gap:10px"><button class="rb" id="mminus" aria-label="По-малко">−</button><input type="number" id="mn" min="1" max="60" value="1" inputmode="numeric" style="width:70px;text-align:center;font-weight:800;font-size:20px"><button class="rb" id="mplus" aria-label="Повече">+</button><span id="mlbl" style="font-size:14px;color:var(--mute)">смени от тази дата</span></div>
 <div id="mprev" style="margin-top:10px"></div>
-<button class="btn" id="mapply" style="width:100%;margin-top:10px">Приложи</button></div>
+<div class="two" style="margin-top:8px"><button class="btn g" id="mpick">До дата в календара</button><button class="btn" id="mapply">Приложи</button></div></div>
+<details id="smore" class="smore"><summary>Извънредни часове, бележка, изчистване</summary>
 <div class="two"><div><label for="sot">Извънредни часове</label><input type="number" id="sot" step="0.5" inputmode="decimal" placeholder="0"></div><div><label>&nbsp;</label><button class="btn d" id="sclr" style="width:100%">Изчисти деня</button></div></div>
-<label for="snote" style="margin-top:12px">Бележка</label><textarea id="snote" placeholder="По желание"></textarea>
-<button class="btn" id="sdone" style="width:100%;margin-top:14px">Готово</button>
+<label for="snote" style="margin-top:12px">Бележка</label><textarea id="snote" placeholder="По желание"></textarea></details>
+<button class="btn" id="sdone" style="width:100%;margin-top:12px">Готово</button>
 </div>
 
 <script type="application/json" id="data">{"ts":1795153385041,"setup":true,"pattern":"Д,Н,П,П","start":"2026-11-18","compStart":0,"vac":{},"days":{},"ledger":[],"types":[{"c":"Д","n":"Дневна","k":"work","h":12,"col":"#f4b400"},{"c":"Н","n":"Нощна","k":"work","h":12,"col":"#3f46b8"},{"c":"П","n":"Почивка","k":"off","h":0,"col":"#d3d6dc"},{"c":"О","n":"Отпуск","k":"vac","h":0,"col":"#14a3a3"},{"c":"К","n":"Компенсация","k":"comp","h":12,"col":"#ef6c4a"},{"c":"Б","n":"Болничен","k":"sick","h":8,"col":"#b0275e"}]}</script>
@@ -514,6 +530,7 @@ function setYear(on,m){ui.year=on;if(!on&&m!=null)ui.m=m;keepUI();renderAll();
 function renderBrush(){
   if(ui.brush&&!T(ui.brush))ui.brush=null;
   $('#brush').innerHTML=S.types.map(t=>`<button class="chip glass${ui.brush===t.c?' on':''}" data-c="${esc(t.c)}" style="${sty(t)}"><b>${esc(t.c)}</b>${esc(t.n)}</button>`).join('')+(ui.brush?'<button class="chip glass clr" data-c="">Спри</button>':'');
+  {const on=$('#brush .chip.on');if(on)requestAnimationFrame(()=>{const b=$('#brush');b.scrollTo({left:on.offsetLeft-b.clientWidth/2+on.offsetWidth/2,behavior:'smooth'})})}
   $('#rmode').style.setProperty('--i',ui.range?1:0);$('#rmode').querySelectorAll('button').forEach(b=>b.classList.toggle('on',+b.dataset.rm===(ui.range?1:0)));
   $('#hint').textContent=!ui.brush?(ui.range?'Избери смяна, после докосни първия и последния ден.':'Избери смяна и докосвай дни. Задръж пръст върху ден за бърз избор.'):ui.range?(ui.rStart?`От ${short(ui.rStart)} — сега докосни последния ден.`:`„${T(ui.brush).n}“: докосни първия ден от периода.`):`Четка „${T(ui.brush).n}“: докосвай дни. Второ докосване връща графика.`;
 }
@@ -599,7 +616,7 @@ function multiPrev(){const t=T(eff(cur));if(!t)return;const n=Math.max(1,Math.mi
 function openDay(k){cur=k;ui.open=true;const p=parse(k),H=hol(p.y),o=S.days[k]||{};
   $('#sdate').textContent=`${p.d} ${MN[p.m].toLowerCase()}, ${WD[new Date(p.y,p.m,p.d).getDay()]}`;
   $('#shol').textContent=H[k]||'';
-  $('#mn').value=1;sheetTypes();$('#sot').value=o.ot||'';$('#snote').value=o.note||'';
+  $('#mn').value=1;sheetTypes();$('#sot').value=o.ot||'';$('#snote').value=o.note||'';$('#smore').open=!!(o.ot||o.note);
   $('#sheet').hidden=false;$('#scrim').hidden=false;
   anim($('#sheet'),[{transform:'translateY(100%)'},{transform:'none'}],{duration:480,easing:'cubic-bezier(.32,1.18,.6,1)'});
   anim($('#scrim'),[{opacity:0},{opacity:1}],{duration:300});
@@ -639,6 +656,7 @@ document.addEventListener('click',e=>{
     if(ui.brush){const o=S.days[k],off=o&&o.t===ui.brush;change(`${short(k)}: ${off?'по график':T(ui.brush).n}`,()=>setT(k,off?null:ui.brush));ui.pop=k;renderAll()}else openDay(k);return}
   if(el.classList.contains('tb')){const c=el.dataset.c;if(eff(cur)===c)return;change(`${short(cur)}: ${T(c).n}`,()=>setT(cur,c));sheetTypes();anim($(`#stypes .tb[data-c="${CSS.escape(c)}"] b`),[{transform:'scale(.6)'},{transform:'scale(1.15)',offset:.6},{transform:'none'}],{duration:450,easing:SP,fill:'none'});return}
   if(el.id==='mminus'||el.id==='mplus'){const i=$('#mn');i.value=Math.max(1,Math.min(60,(parseInt(i.value)||1)+(el.id==='mplus'?1:-1)));multiPrev();return}
+  if(el.id==='mpick'){const t=T(eff(cur)),k=cur;if(!t)return;ui.brush=t.c;ui.range=true;ui.rStart=k;closeDay();setTimeout(()=>{showPanel('brush');renderBrush();renderGrid();toast(`От ${short(k)} — докосни последния ден`)},300);return}
   if(el.id==='mapply'){const t=T(eff(cur)),plan=JSON.parse($('#mprev').dataset.plan||'[]'),n=+$('#mprev').dataset.cnt||0;if(!t||!plan.length)return;
     change(`${t.n}: ${n} ${unitW(t,n)} от ${short(plan[0][0])}`,()=>plan.forEach(([x,c])=>setT(x,c)));closeDay();return}
   if(el.id==='srev'){change(`${short(cur)}: по график`,()=>setT(cur,null));sheetTypes();return}
@@ -660,7 +678,8 @@ document.addEventListener('click',e=>{
   if(el.id==='bcopy'){const s=JSON.stringify(S);navigator.clipboard.writeText(s).then(()=>{$('#bmsg').textContent='Копирано. Запиши го някъде, напр. в бележка.'},()=>{$('#btxt').value=s;$('#btxt').select();$('#bmsg').textContent='Копирай текста от полето ръчно.'});return}
   if(el.id==='brest'){try{const d=JSON.parse($('#btxt').value);if(!d.types||!d.days)throw 0;S=d;save();renderAll();$('#bmsg').textContent='Данните са възстановени.'}catch(x){$('#bmsg').textContent='Текстът не е валидно копие.'}return}
 });
-$('#scrim').addEventListener('click',closeDay);
+$('#scrim').addEventListener('click',e=>{const sc=$('#scrim');sc.style.pointerEvents='none';const c=document.elementFromPoint(e.clientX,e.clientY);sc.style.pointerEvents='';
+  const cell=c&&c.closest&&c.closest('.c');closeDay();if(cell&&cell.dataset.k)setTimeout(()=>openDay(cell.dataset.k),320)});
 $('#bload').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;try{const d=JSON.parse(await f.text());if(!d.types||!d.days)throw 0;S=d;migrate();save();renderAll();$('#bmsg').textContent='Данните са заредени от файла.'}catch(x){$('#bmsg').textContent='Файлът не е валидно копие.'}e.target.value=''});
 const fsIcon=()=>{$('#fsi').setAttribute('d',document.fullscreenElement?'M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5':'M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5')};
 $('#fs').addEventListener('click',async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen({navigationUI:'hide'})}catch(e){setSt('Цял екран не е позволен тук');setTimeout(stIdle,3000)}});
@@ -688,6 +707,7 @@ function revealPanel(id){const sec=document.getElementById(id);if(!sec)return;
   [...sec.children].forEach((ch,i)=>anim(ch,[{opacity:0,transform:'translateY(12px)'},{opacity:1,transform:'none'}],{duration:420,delay:60+i*45}));
   countUp(sec);const r=sec.querySelector('.ring .pr');if(r&&!RM){const C=r.getAttribute('stroke-dasharray'),to=r.getAttribute('stroke-dashoffset');r.animate([{strokeDashoffset:C},{strokeDashoffset:to}],{duration:900,delay:120,easing:EO,fill:'backwards'})}}
 function showPanel(p){const prev=ui.panel,P=$('#panel'),tabs=$('.tabs');ui.panel=p;const id=p==='brush'?'p-brush':p;
+  document.body.classList.toggle('brushing',p==='brush');if(p==='brush')requestAnimationFrame(()=>document.body.style.setProperty('--pb',P.offsetHeight+'px'));
   tabs.style.setProperty('--i',Math.max(0,TABS.indexOf(p)));tabs.style.setProperty('--o',p?1:0);tabs.style.setProperty('--s',p?1:.6);
   document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x.dataset.tab===p));
   if(panelAnim){panelAnim.cancel();panelAnim=null}
@@ -700,6 +720,7 @@ function showPanel(p){const prev=ui.panel,P=$('#panel'),tabs=$('.tabs');ui.panel
   else if(prev!==p){const d=TABS.indexOf(p)>TABS.indexOf(prev)?1:-1;anim(document.getElementById(id),[{transform:`translateX(${d*30}px)`,opacity:0},{transform:'none',opacity:1}],{duration:380})}
   revealPanel(id);keepUI()}
 ui.open=false;ui.year=false;ui.rStart=null;
+try{new ResizeObserver(()=>{if(ui.panel==='brush'&&!$('#panel').hidden)document.body.style.setProperty('--pb',$('#panel').offsetHeight+'px')}).observe($('#panel'))}catch(e){}
 let qk=null;
 function showQuick(k,cell){qk=k;const q=$('#quick'),cv=eff(k);
   q.innerHTML=S.types.map(t=>`<button data-qc="${esc(t.c)}" class="${cv===t.c?'on':''}" style="--b:${t.col}" aria-label="${esc(t.n)}">${esc(t.c)}</button>`).join('')+(S.days[k]&&S.days[k].t?'<button data-qc="" class="rv" aria-label="По график">↺</button>':'');
