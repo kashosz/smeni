@@ -363,6 +363,7 @@ body.brushing #panel{padding-top:2px}
 <section class="pn" id="settings"><h2>Настройки</h2>
 <p class="sub">Външен вид</p>
 <div class="seg seg2" id="skin" style="margin-right:0"><button data-skin="grey">Графит</button><button data-skin="light">Светъл</button></div>
+<label style="display:flex;align-items:center;gap:10px;font-size:15px;color:var(--ink);margin:12px 4px 0"><input type="checkbox" id="afs" style="width:22px;min-height:22px"> Винаги на цял екран</label>
 <label style="display:flex;align-items:center;gap:10px;font-size:15px;color:var(--ink);margin:12px 4px 0"><input type="checkbox" id="bubl" style="width:22px;min-height:22px"> Цветни полета за дневни и нощни</label>
 <p class="sub">Ротация</p>
 <label for="pat">Смени по ред, разделени със запетая</label>
@@ -661,7 +662,7 @@ function renderSettings(){
   $('#types').innerHTML=S.types.map((t,i)=>`<div class="trow" data-i="${i}"><input type="color" value="${t.col}" data-f="col" aria-label="Цвят"><span class="cd">${esc(t.c)}</span><input value="${esc(t.n)}" data-f="n" aria-label="Име"><input type="number" step="0.5" value="${+t.h||0}" data-f="h" aria-label="Часове"><select data-f="k" aria-label="Вид">${ko.replace(`value="${t.k}"`,`value="${t.k}" selected`)}</select><input type="number" step="0.5" value="${+t.nh||0}" data-f="nh" aria-label="Нощни часове">${t.k==='work'?`<div class="tt"><span>от</span><input type="time" value="${t.from||''}" data-f="from" aria-label="Начало"><span>до</span><input type="time" value="${t.to||''}" data-f="to" aria-label="Край"></div>`:''}</div>`).join('');
   $('#ss').innerHTML=MN.map((n,i)=>`<option value="${i}">${n}</option>`).join('');
   document.querySelectorAll('[data-s]').forEach(el=>{const [a,b]=el.dataset.s.split('.');el.value=S[a][b]??''});
-  $('#holn').checked=!!S.holNorm;$('#bubl').checked=!!S.bubbles;{const k=S.skin||'grey';$('#skin').style.setProperty('--i',k==='grey'?0:1);$('#skin').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.skin===k))}
+  $('#holn').checked=!!S.holNorm;$('#bubl').checked=!!S.bubbles;$('#afs').checked=S.autoFS!==false;{const k=S.skin||'grey';$('#skin').style.setProperty('--i',k==='grey'?0:1);$('#skin').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.skin===k))}
   $('#nkind').innerHTML=ko;$('#cst').value=+S.compStart||0;$('#snorm').value=S.norm;$('#snf').value=S.nf;
   $('#banner').innerHTML=S.setup?'':'<div class="glass banner">Показана е примерна ротация. <a href="#settings" id="gos">Настрой своята</a></div>';
 }
@@ -756,6 +757,11 @@ const fsIcon=()=>{$('#fsi').setAttribute('d',document.fullscreenElement?'M9 4v5H
 $('#fs').addEventListener('click',async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen({navigationUI:'hide'})}catch(e){setSt('Цял екран не е позволен тук');setTimeout(stIdle,3000)}});
 document.addEventListener('fullscreenchange',fsIcon);
 if(!document.fullscreenEnabled)$('#fs').hidden=true;
+/* винаги на цял екран: при инсталирано приложение го прави манифестът; иначе — при първото докосване */
+{const isFS=()=>document.fullscreenElement||matchMedia('(display-mode: fullscreen)').matches;
+ if(matchMedia('(display-mode: fullscreen)').matches)$('#fs').hidden=true;
+ const go=()=>{if(S.autoFS===false||isFS()||!document.fullscreenEnabled)return;document.documentElement.requestFullscreen({navigationUI:'hide'}).catch(()=>{})};
+ addEventListener('pointerup',go,{capture:true});}
 $('#mn').addEventListener('input',multiPrev);
 $('#sot').addEventListener('input',e=>{const v=parseFloat(String(e.target.value).replace(',','.'));const o=day(cur);if(v)o.ot=v;else delete o.ot;tidy(cur);save()});
 $('#snote').addEventListener('input',e=>{const o=day(cur),v=e.target.value.trim();if(v)o.note=v;else delete o.note;tidy(cur);save()});
@@ -763,6 +769,7 @@ document.addEventListener('change',e=>{const t=e.target;
   if(t.id==='va'||t.id==='vc'){const y=t.dataset.y,v=S.vac[y]||(S.vac[y]={a:20,c:0});v[t.id==='va'?'a':'c']=parseFloat(t.value)||0;save();renderVac();return}
   if(t.id==='snorm'||t.id==='snf'){S[t.id==='snorm'?'norm':'nf']=parseFloat(String(t.value).replace(',','.'))||0;save();renderMonth();return}
   if(t.id==='cst'){S.compStart=parseFloat(t.value)||0;save();renderComp();return}
+  if(t.id==='afs'){S.autoFS=t.checked;save();if(!t.checked&&document.fullscreenElement)document.exitFullscreen().catch(()=>{});return}
   if(t.id==='bubl'){change(t.checked?'Цветни полета: включени':'Цветни полета: изключени',()=>{S.bubbles=t.checked});renderGrid();return}
   if(t.id==='holn'){S.holNorm=t.checked;save();renderAll();return}
   if(t.dataset.s){const [a,b]=t.dataset.s.split('.'),v=t.value;S[a][b]=b==='cur'?v:(parseFloat(String(v).replace(',','.'))||0);save();renderMonth();return}
