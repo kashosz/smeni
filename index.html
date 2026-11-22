@@ -344,6 +344,10 @@ input,select,textarea{background:light-dark(rgba(255,255,255,.6),rgba(255,255,25
 <p id="sdate"></p><div id="shol"></div>
 <div id="stypes"></div>
 <div id="sbase"></div>
+<div id="smulti" class="card2" hidden><h3 id="smt">Отпуск за няколко смени</h3>
+<div style="display:flex;align-items:center;gap:10px"><button class="rb" id="mminus" aria-label="По-малко">−</button><input type="number" id="mn" min="1" max="60" value="1" inputmode="numeric" style="width:70px;text-align:center;font-weight:800;font-size:20px"><button class="rb" id="mplus" aria-label="Повече">+</button><span style="font-size:14px;color:var(--mute)">смени от тази дата</span></div>
+<div id="mprev" style="margin-top:10px"></div>
+<button class="btn" id="mapply" style="width:100%;margin-top:10px">Приложи</button></div>
 <div class="two"><div><label for="sot">Извънредни часове</label><input type="number" id="sot" step="0.5" inputmode="decimal" placeholder="0"></div><div><label>&nbsp;</label><button class="btn d" id="sclr" style="width:100%">Изчисти деня</button></div></div>
 <label for="snote" style="margin-top:12px">Бележка</label><textarea id="snote" placeholder="По желание"></textarea>
 <button class="btn" id="sdone" style="width:100%;margin-top:14px">Готово</button>
@@ -411,14 +415,19 @@ const short=k=>{const p=parse(k);return `${p.d} ${MS[p.m]}`};
 const tname=k=>{const t=T(eff(k));return t?t.n:'—'};
 function buzz(ms){try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}}
 /* per-day hours */
-function dayCalc(k){const d=kdate(k),w=d.getDay(),H=hol(d.getFullYear()),c=eff(k),t=T(c),tb=T(base(k)),o=S.days[k]||{},r={norm:0,sh:0,sn:0,wh:0,wn:0,ot:+o.ot||0,nightH:0,holH:0,hw:0,vacH:0,c};
+function dayCalc(k){const d=kdate(k),w=d.getDay(),H=hol(d.getFullYear()),c=eff(k),t=T(c),tb=T(base(k)),o=S.days[k]||{},r={norm:0,sh:0,sn:0,wh:0,wn:0,ot:+o.ot||0,nightH:0,holH:0,hw:0,vacH:0,leave:0,c};
   if(t&&t.k==='vac'&&tb&&tb.k==='work')r.vacH=+tb.h||0;
   if(w!==0&&w!==6&&!H[k])r.norm=+S.norm||0;
+  if(t&&(t.k==='vac'||t.k==='sick')&&tb&&tb.k==='work'){r.norm-=(+S.norm||0);r.leave=1}
   if(tb&&tb.k==='work'){r.sh=+tb.h||0;r.sn=nb(tb)}
   if(t&&t.k==='work'){r.wh=+t.h||0;r.wn=nb(t);r.nightH=+t.nh||0;if(H[k]){r.holH=+t.h||0;r.hw=1}}
   r.wh+=r.ot;return r}
-function sumRange(k0,k1,upto){const a={norm:0,sh:0,sn:0,wh:0,wn:0,ot:0,nightH:0,holH:0,hw:0,vacH:0,cnt:{}};
+function sumRange(k0,k1,upto){const a={norm:0,sh:0,sn:0,wh:0,wn:0,ot:0,nightH:0,holH:0,hw:0,vacH:0,leave:0,cnt:{}};
   for(let k=k0;k<=k1;k=kadd(k,1)){if(upto&&k>upto)break;const r=dayCalc(k);for(const f in a)if(f!=='cnt')a[f]+=r[f];if(r.c)a.cnt[r.c]=(a.cnt[r.c]||0)+1}return a}
+function endDiff(k){const p=parse(k),L=+S.sum.len||1,m=sumRange(key(p.y,p.m,1),key(p.y,p.m,new Date(p.y,p.m+1,0).getDate()));let per=null;
+  if(L>1){const st=+S.sum.start||0;let m0=p.m-((((p.m-st)%L)+L)%L),y0=p.y;if(m0<0){m0+=12;y0--}let m1=m0+L-1,y1=y0;if(m1>11){m1-=12;y1++}const a=sumRange(key(y0,m0,1),key(y1,m1,new Date(y1,m1+1,0).getDate()));per={v:a.wh+a.wn-a.norm,lbl:`${MS[m0]}–${MS[m1]}`}}
+  return {mon:m.wh+m.wn-m.norm,per,vacLeft:(()=>{const v=S.vac[p.y]||{a:20,c:0};return (+v.a||0)+(+v.c||0)-Object.keys(S.days).filter(x=>x.startsWith(p.y+'-')&&(T(S.days[x].t)||{}).k==='vac').length})()}}
+function nextWork(k,n){const out=[];for(let i=0,x=k;out.length<n&&i<120;i++,x=kadd(x,1)){const bt=T(base(x));if(bt&&bt.k==='work')out.push(x)}return out}
 /* undo + toast */
 let undoSnap=null,toastT=null;
 function change(msg,fn){const before=JSON.stringify(S);fn();save();toast(msg,before)}
@@ -486,20 +495,14 @@ function renderBrush(){
   $('#hint').textContent=!ui.brush?(ui.range?'Избери смяна, после докосни първия и последния ден.':'Избери смяна и докосвай дни. Задръж пръст върху ден за бърз избор.'):ui.range?(ui.rStart?`От ${short(ui.rStart)} — сега докосни последния ден.`:`„${T(ui.brush).n}“: докосни първия ден от периода.`):`Четка „${T(ui.brush).n}“: докосвай дни. Второ докосване връща графика.`;
 }
 function renderMonth(){
-  const {y,m}=ui,n=new Date(y,m+1,0).getDate(),H=hol(y);let norm=0,sh=0,sn=0,wh=0,wn=0,ot=0,hw=0;const cnt={};
-  for(let d=1;d<=n;d++){const k=key(y,m,d),w=new Date(y,m,d).getDay(),c=eff(k),t=T(c),tb=T(base(k)),o=S.days[k]||{};
-    if(w!==0&&w!==6&&!H[k])norm+=+S.norm||0;
-    if(tb&&tb.k==='work'){sh+=+tb.h||0;sn+=nb(tb)}
-    if(c)cnt[c]=(cnt[c]||0)+1;
-    if(t&&t.k==='work'){wh+=+t.h||0;wn+=nb(t);if(H[k])hw++}
-    if(o.ot)ot+=+o.ot}
-  wh+=ot;const diff=wh+wn-norm,f1=v=>fmt(Math.round(v*10)/10),plus=v=>v?`<small>+${f1(v)}</small>`:'';
+  const {y,m}=ui,n=new Date(y,m+1,0).getDate(),A=sumRange(key(y,m,1),key(y,m,n)),{norm,sh,sn,wh,wn,ot,hw,cnt,leave}=A;
+  const diff=wh+wn-norm,f1=v=>fmt(Math.round(v*10)/10),plus=v=>v?`<small>+${f1(v)}</small>`:'';
   $('#month').innerHTML=`<h2>Часове за ${MN[m].toLowerCase()}</h2>
   <div class="tiles"><div class="tile"><span>Норма</span><b>${f1(norm)}</b></div><div class="tile"><span>По график</span><b>${f1(sh)}${plus(sn)}</b></div><div class="tile"><span>Отработени</span><b>${f1(wh)}${plus(wn)}</b></div></div>
   <span class="delta" style="--c:${diff<0?'var(--red)':'var(--ink)'}">${diff>0?'+':''}${f1(diff)} ч ${diff<0?'под':'над'} нормата</span>
   <div class="list">${S.types.filter(t=>cnt[t.c]).map(t=>`<div class="li"><i class="dot" style="${sty(t)}"></i><span class="n">${esc(t.n)}</span><span class="v">${cnt[t.c]}</span></div>`).join('')}
   <div class="li"><span class="n">Извънредни</span><span class="v">${ot?'+'+fmt(ot):'0'} ч</span></div><div class="li"><span class="n">Смени на празник</span><span class="v">${hw}</span></div></div>
-  <p class="note2">„+“ са нощните часове, превърнати в дневни (×${String(S.nf).replace('.',',')}).</p>${sumCard()}${payCard()}`;
+  <p class="note2">„+“ са нощните часове, превърнати в дневни (×${String(S.nf).replace('.',',')}).${leave?` Нормата е намалена с ${fmt(leave*(+S.norm||0))} ч заради ${leave} ${leave===1?'ден':'дни'} отпуск/болничен.`:''}</p>${sumCard()}${payCard()}`;
 }
 function sumCard(){const L=+S.sum.len||1;if(L<2)return'';const st=+S.sum.start||0;let m0=ui.m-((((ui.m-st)%L)+L)%L),y0=ui.y;if(m0<0){m0+=12;y0--}
   let m1=m0+L-1,y1=y0;if(m1>11){m1-=12;y1++}
@@ -558,11 +561,21 @@ function renderAll(){renderGrid();renderBrush();renderMonth();renderVac();render
 let cur=null;
 function sheetTypes(){const b=base(cur),o=S.days[cur]||{};
   $('#stypes').innerHTML=S.types.map(t=>`<button class="tb${eff(cur)===t.c?' on':''}" data-c="${esc(t.c)}" style="${sty(t)}"><b>${esc(t.c)}</b>${esc(t.n)}</button>`).join('');
-  $('#sbase').innerHTML=b?`По график: ${esc((T(b)||{}).n||b)}${o.t?' · <button class="lnk" id="srev">върни по график</button>':''}`:'';}
+  $('#sbase').innerHTML=b?`По график: ${esc((T(b)||{}).n||b)}${o.t?' · <button class="lnk" id="srev">върни по график</button>':''}`:'';
+  const t=T(eff(cur)),show=t&&['vac','sick','comp'].includes(t.k);$('#smulti').hidden=!show;if(show){$('#smt').textContent=`${t.n} за няколко смени`;multiPrev()}}
+function multiPrev(){const t=T(eff(cur));if(!t)return;const n=Math.max(1,Math.min(60,parseInt($('#mn').value)||1)),list=nextWork(cur,n);
+  const snap=JSON.stringify(S);setT(cur,null);const b=endDiff(cur);list.forEach(x=>setT(x,t.c));const a=endDiff(cur);S=JSON.parse(snap);
+  const f1=v=>(v>0?'+':'')+fmt(Math.round(v*10)/10)+' ч',col=v=>v<0?'var(--red)':'var(--ink)',p=parse(cur);
+  const row=(l,x,y)=>`<div class="li"><span class="n">${l}</span><span class="v"><span style="color:var(--mute)">${x}</span> → <span style="color:${y.c}">${y.t}</span></span></div>`;
+  $('#mprev').innerHTML=`<p class="note2" style="margin:0 0 6px">Смени: ${list.map(short).join(', ')}${list.length<n?' (няма повече смени в графика)':''}</p><div class="list" style="margin-top:0">
+   ${row(`Край на ${MN[p.m].toLowerCase()}`,f1(b.mon),{t:f1(a.mon),c:col(a.mon)})}
+   ${b.per?row(`Край на периода (${b.per.lbl})`,f1(b.per.v),{t:f1(a.per.v),c:col(a.per.v)}):''}
+   ${t.k==='vac'?row('Остават дни отпуск',b.vacLeft,{t:a.vacLeft,c:a.vacLeft<0?'var(--red)':'var(--ink)'}):''}</div>`;
+  $('#mprev').dataset.list=list.join(',')}
 function openDay(k){cur=k;ui.open=true;const p=parse(k),H=hol(p.y),o=S.days[k]||{};
   $('#sdate').textContent=`${p.d} ${MN[p.m].toLowerCase()}, ${WD[new Date(p.y,p.m,p.d).getDay()]}`;
   $('#shol').textContent=H[k]||'';
-  sheetTypes();$('#sot').value=o.ot||'';$('#snote').value=o.note||'';
+  $('#mn').value=1;sheetTypes();$('#sot').value=o.ot||'';$('#snote').value=o.note||'';
   $('#sheet').hidden=false;$('#scrim').hidden=false;
   anim($('#sheet'),[{transform:'translateY(100%)'},{transform:'none'}],{duration:480,easing:'cubic-bezier(.32,1.18,.6,1)'});
   anim($('#scrim'),[{opacity:0},{opacity:1}],{duration:300});
@@ -600,6 +613,9 @@ document.addEventListener('click',e=>{
       renderAll();$('#grid').querySelectorAll('.c').forEach(c=>{const x=c.dataset.k;if(x>=a&&x<=b)anim(c,[{transform:'scale(.85)',opacity:.4},{transform:'none',opacity:1}],{duration:450,delay:(dnum(x)-dnum(a))*25,easing:SP})});return}
     if(ui.brush){const o=S.days[k],off=o&&o.t===ui.brush;change(`${short(k)}: ${off?'по график':T(ui.brush).n}`,()=>setT(k,off?null:ui.brush));ui.pop=k;renderAll()}else openDay(k);return}
   if(el.classList.contains('tb')){const c=el.dataset.c;if(eff(cur)===c)return;change(`${short(cur)}: ${T(c).n}`,()=>setT(cur,c));sheetTypes();anim($(`#stypes .tb[data-c="${CSS.escape(c)}"] b`),[{transform:'scale(.6)'},{transform:'scale(1.15)',offset:.6},{transform:'none'}],{duration:450,easing:SP,fill:'none'});return}
+  if(el.id==='mminus'||el.id==='mplus'){const i=$('#mn');i.value=Math.max(1,Math.min(60,(parseInt(i.value)||1)+(el.id==='mplus'?1:-1)));multiPrev();return}
+  if(el.id==='mapply'){const t=T(eff(cur)),list=($('#mprev').dataset.list||'').split(',').filter(Boolean);if(!t||!list.length)return;
+    change(`${t.n}: ${list.length} ${list.length===1?'смяна':'смени'} от ${short(list[0])}`,()=>list.forEach(x=>setT(x,t.c)));closeDay();return}
   if(el.id==='srev'){change(`${short(cur)}: по график`,()=>setT(cur,null));sheetTypes();return}
   if(el.id==='sclr'){const k=cur;change(`${short(k)}: изчистен`,()=>{delete S.days[k]});closeDay();return}
   if(el.id==='sdone'){closeDay();return}
@@ -625,6 +641,7 @@ const fsIcon=()=>{$('#fsi').setAttribute('d',document.fullscreenElement?'M9 4v5H
 $('#fs').addEventListener('click',async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen({navigationUI:'hide'})}catch(e){setSt('Цял екран не е позволен тук');setTimeout(stIdle,3000)}});
 document.addEventListener('fullscreenchange',fsIcon);
 if(!document.fullscreenEnabled)$('#fs').hidden=true;
+$('#mn').addEventListener('input',multiPrev);
 $('#sot').addEventListener('input',e=>{const v=parseFloat(String(e.target.value).replace(',','.'));const o=day(cur);if(v)o.ot=v;else delete o.ot;tidy(cur);save()});
 $('#snote').addEventListener('input',e=>{const o=day(cur),v=e.target.value.trim();if(v)o.note=v;else delete o.note;tidy(cur);save()});
 document.addEventListener('change',e=>{const t=e.target;
