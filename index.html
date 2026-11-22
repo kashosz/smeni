@@ -297,6 +297,44 @@ body.brushing .app{padding-bottom:calc(88px + var(--pb,0px) + env(safe-area-inse
 #p-brush .seg2{margin-bottom:8px}#p-brush .seg2 button{height:32px;font-size:13px}
 #p-brush #hint{margin:6px 4px 0;font-size:12.5px;min-height:0}
 body.brushing #panel{padding-bottom:10px}
+
+/* short cells (when the fill panel is open): keep letter and date apart */
+.c{container-type:size}
+@container (max-height:72px){
+  .c .dn{width:26px!important;height:26px!important;font-size:16px!important}
+  .c .bd{top:7px!important;left:9px!important;font-size:10.5px!important}.c .bd.r{left:auto!important;right:9px!important}
+  .c{padding-bottom:3px!important}
+  .c u{top:6px!important}.c i{bottom:1px!important;font-size:9px!important}
+}
+body.brushing #p-brush #hint{display:none}
+body.brushing #panel{padding-top:2px}
+
+/* ---- graphite skin (like the keyboard background) ---- */
+:root[data-skin=grey]{color-scheme:dark;--bg:#5d5d5f;--ink:#fff;--mute:rgba(255,255,255,.62);--card:#3d3d40;--fill:rgba(255,255,255,.12);--sep:rgba(255,255,255,.16);--edge:rgba(255,255,255,.2)}
+:root[data-skin=grey] body{background:linear-gradient(180deg,#7b7b7d 0%,#686869 40%,#58585a 75%,#4d4d4f 100%) fixed}
+:root[data-skin=grey] body::after{background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.06) 45%,transparent 58%)}
+:root[data-skin=grey] .glass{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.18);box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 18px 40px rgba(0,0,0,.25)}
+:root[data-skin=grey] .rb{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.16);box-shadow:none}
+:root[data-skin=grey] .rb svg{stroke:#fff}
+:root[data-skin=grey] .seg{background:rgba(0,0,0,.14);border-color:rgba(255,255,255,.12)}
+:root[data-skin=grey] .seg::before{background:rgba(255,255,255,.22);box-shadow:none}
+:root[data-skin=grey] .c::after{background:rgba(255,255,255,.14)}
+:root[data-skin=grey] .c{border-bottom-color:rgba(255,255,255,.14)}
+:root[data-skin=grey] .c.we{background:rgba(0,0,0,.1)}
+:root[data-skin=grey] .c.fill::before{background:linear-gradient(160deg,color-mix(in srgb,var(--tint) 22%,rgba(255,255,255,.14)),color-mix(in srgb,var(--tint) 34%,rgba(255,255,255,.06)));border-color:rgba(255,255,255,.22);box-shadow:0 6px 14px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.3)}
+:root[data-skin=grey] .c .bd{color:color-mix(in srgb,var(--b) 45%,#fff)}
+:root[data-skin=grey] .c.we .dn{color:rgba(255,255,255,.6)}
+:root[data-skin=grey] #panel,:root[data-skin=grey] #sheet{background:rgba(72,72,75,.86)}
+:root[data-skin=grey] .tabs{background:rgba(60,60,63,.7)}
+:root[data-skin=grey] .tile:not(.x),:root[data-skin=grey] .list,:root[data-skin=grey] .card2,:root[data-skin=grey] .grp,:root[data-skin=grey] input,:root[data-skin=grey] select,:root[data-skin=grey] textarea,:root[data-skin=grey] .chip,:root[data-skin=grey] .tb,:root[data-skin=grey] .nowbar button,:root[data-skin=grey] .btn.g,:root[data-skin=grey] .btn.d,:root[data-skin=grey] .delta{background:rgba(255,255,255,.1)!important;border-color:rgba(255,255,255,.16)!important}
+:root[data-skin=grey] .tiles .tile:nth-child(1){background:linear-gradient(160deg,rgba(183,166,245,.35),rgba(183,166,245,.18))!important}
+:root[data-skin=grey] .tiles .tile:nth-child(2){background:linear-gradient(160deg,rgba(245,154,134,.35),rgba(245,154,134,.18))!important}
+:root[data-skin=grey] .tiles .tile:nth-child(3){background:linear-gradient(160deg,rgba(143,220,178,.32),rgba(143,220,178,.16))!important}
+:root[data-skin=grey] .btn:not(.g):not(.d),:root[data-skin=grey] .pill{color:#fff}
+:root[data-skin=grey] .chip.on,:root[data-skin=grey] #p-brush .chip.on{background:linear-gradient(180deg,#f59a86,#ea7360)!important}
+:root[data-skin=grey] .tb.on{background:rgba(255,255,255,.22)!important;border-color:var(--coral)!important}
+:root[data-skin=grey] #toast{background:rgba(25,25,27,.9);color:#fff}
+:root[data-skin=grey] .mm.cur{background:rgba(255,255,255,.12)}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}.c,#sheet,.ring .pr{transition:none;animation:none}}
 </style></head><body>
 <svg width="0" height="0" style="position:absolute"><defs><linearGradient id="vg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b7a6f5"/><stop offset=".5" stop-color="#f59a86"/><stop offset="1" stop-color="#8fdcb2"/></linearGradient></defs></svg>
@@ -323,6 +361,8 @@ body.brushing #panel{padding-bottom:10px}
 <section class="pn" id="vac"></section>
 <section class="pn" id="comp"></section>
 <section class="pn" id="settings"><h2>Настройки</h2>
+<p class="sub">Външен вид</p>
+<div class="seg seg2" id="skin" style="margin-right:0"><button data-skin="grey">Графит</button><button data-skin="light">Светъл</button></div>
 <p class="sub">Ротация</p>
 <label for="pat">Смени по ред, разделени със запетая</label>
 <input id="pat" autocomplete="off">
@@ -405,6 +445,8 @@ S.types.forEach(t=>{if(t.nh==null)t.nh=t.c==='Н'?8:0;if(t.from==null&&t.k==='wo
 if(S.nf===1.143)S.nf=1.1429;if(!S.types.find(t=>t.c==='Р'))S.types.splice(Math.max(0,S.types.findIndex(t=>t.k==='off')),0,{c:'Р',n:'Редовна',k:'work',h:8,nh:0,col:'#8e8e93',from:'08:00',to:'16:30'});
 if(!S.sum)S.sum={len:1,start:0};if(!S.pay)S.pay={rate:0,cur:'€',night:0,sen:0,hol:100,ot:50}}
 migrate();
+function applySkin(){const k=S.skin||'grey';document.documentElement.dataset.skin=k;const m=document.querySelector('meta[name=theme-color]');try{document.querySelectorAll('meta[name=theme-color]').forEach(x=>x.setAttribute('content',k==='grey'?'#7b7b7d':'#e4e6eb'))}catch(e){}}
+applySkin();
 const nb=t=>t?(+t.nh||0)*((+S.nf||1)-1):0;
 
 let ui={y:now.getFullYear(),m:now.getMonth(),brush:null,open:false};
@@ -486,7 +528,7 @@ function record(){const cur=body();if(lastBody!=null&&cur!==lastBody){const now=
     REDO=[];lastPushT=now;persistH()}
   pendLabel=null;lastBody=cur;updUndo()}
 function updUndo(){const b=$('#ubtn');if(!b)return;b.classList.toggle('off',!HIST.length);b.innerHTML=b.innerHTML.replace(/<i>.*<\/i>/,'')+(HIST.length?`<i>${HIST.length}</i>`:'')}
-function restore(str){S=JSON.parse(str);migrate();S.ts=Date.now();lastBody=body();local();persistH();renderAll();if(cur){sheetTypes();const o=S.days[cur]||{};$('#sot').value=o.ot||'';$('#snote').value=o.note||''}updUndo()}
+function restore(str){S=JSON.parse(str);migrate();applySkin();S.ts=Date.now();lastBody=body();local();persistH();renderAll();if(cur){sheetTypes();const o=S.days[cur]||{};$('#sot').value=o.ot||'';$('#snote').value=o.note||''}updUndo()}
 function doUndo(){if(!HIST.length){toast('Няма промени за отмяна');return}const e=HIST.pop();REDO.push({l:e.l,s:body()});restore(e.s);toast('Отменено: '+e.l,'redo');buzz(15)}
 function doRedo(){if(!REDO.length)return;const e=REDO.pop();HIST.push({l:e.l,s:body()});restore(e.s);toast('Върнато: '+e.l,'undo')}
 function change(msg,fn){pendLabel=msg||'Промяна';fn();save();if(msg)toast(msg,'undo')}
@@ -613,7 +655,7 @@ function renderSettings(){
   $('#types').innerHTML=S.types.map((t,i)=>`<div class="trow" data-i="${i}"><input type="color" value="${t.col}" data-f="col" aria-label="Цвят"><span class="cd">${esc(t.c)}</span><input value="${esc(t.n)}" data-f="n" aria-label="Име"><input type="number" step="0.5" value="${+t.h||0}" data-f="h" aria-label="Часове"><select data-f="k" aria-label="Вид">${ko.replace(`value="${t.k}"`,`value="${t.k}" selected`)}</select><input type="number" step="0.5" value="${+t.nh||0}" data-f="nh" aria-label="Нощни часове">${t.k==='work'?`<div class="tt"><span>от</span><input type="time" value="${t.from||''}" data-f="from" aria-label="Начало"><span>до</span><input type="time" value="${t.to||''}" data-f="to" aria-label="Край"></div>`:''}</div>`).join('');
   $('#ss').innerHTML=MN.map((n,i)=>`<option value="${i}">${n}</option>`).join('');
   document.querySelectorAll('[data-s]').forEach(el=>{const [a,b]=el.dataset.s.split('.');el.value=S[a][b]??''});
-  $('#holn').checked=!!S.holNorm;
+  $('#holn').checked=!!S.holNorm;{const k=S.skin||'grey';$('#skin').style.setProperty('--i',k==='grey'?0:1);$('#skin').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.skin===k))}
   $('#nkind').innerHTML=ko;$('#cst').value=+S.compStart||0;$('#snorm').value=S.norm;$('#snf').value=S.nf;
   $('#banner').innerHTML=S.setup?'':'<div class="glass banner">Показана е примерна ротация. <a href="#settings" id="gos">Настрой своята</a></div>';
 }
@@ -658,6 +700,7 @@ document.addEventListener('click',e=>{
   buzz(7);
   if(el.id==='undo'||el.id==='ubtn'){doUndo();return}
   if(el.id==='redo'){doRedo();return}
+  if(el.dataset.skin){if((S.skin||'grey')===el.dataset.skin)return;change('Външен вид',()=>{S.skin=el.dataset.skin});applySkin();renderSettings();return}
   if(el.id==='mtb'){setYear(!ui.year);return}
   if(el.dataset.ym!=null){setYear(false,+el.dataset.ym);return}
   if(el.dataset.go){const p=parse(el.dataset.go);const d=Math.sign((p.y-ui.y)*12+p.m-ui.m);ui.year=false;ui.y=p.y;ui.m=p.m;ui.dir=d;keepUI();renderAll();const c=$(`[data-k="${el.dataset.go}"]`);anim(c,[{transform:'scale(1)'},{transform:'scale(1.12)'},{transform:'none'}],{duration:500,easing:SP,fill:'none'});return}
