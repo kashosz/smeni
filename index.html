@@ -309,6 +309,10 @@ body.brushing #panel{padding-bottom:10px}
 body.brushing #p-brush #hint{display:none}
 body.brushing #panel{padding-top:2px}
 
+/* shift shown by the colour of the date itself */
+.c{justify-content:center!important;padding-bottom:0!important}.c .dn{font-size:clamp(19px,5.6vw,26px)}
+.c.sc .dn{color:color-mix(in srgb,var(--dc) 78%,#000)!important;font-weight:800}
+.c.sc.td .dn{color:#fff!important;background:var(--dc)!important;box-shadow:0 6px 14px color-mix(in srgb,var(--dc) 45%,transparent)!important}
 /* ---- graphite skin (like the keyboard background) ---- */
 :root[data-skin=grey]{color-scheme:dark;--bg:#5d5d5f;--ink:#fff;--mute:rgba(255,255,255,.62);--card:#3d3d40;--fill:rgba(255,255,255,.12);--sep:rgba(255,255,255,.16);--edge:rgba(255,255,255,.2)}
 :root[data-skin=grey] body{background:linear-gradient(180deg,#7b7b7d 0%,#686869 40%,#58585a 75%,#4d4d4f 100%) fixed}
@@ -324,6 +328,8 @@ body.brushing #panel{padding-top:2px}
 :root[data-skin=grey] .c.fill::before{background:linear-gradient(160deg,color-mix(in srgb,var(--tint) 22%,rgba(255,255,255,.14)),color-mix(in srgb,var(--tint) 34%,rgba(255,255,255,.06)));border-color:rgba(255,255,255,.22);box-shadow:0 6px 14px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.3)}
 :root[data-skin=grey] .c .bd{color:color-mix(in srgb,var(--b) 45%,#fff)}
 :root[data-skin=grey] .c.we .dn{color:rgba(255,255,255,.6)}
+:root[data-skin=grey] .c.sc .dn{color:color-mix(in srgb,var(--dc) 52%,#fff)!important}
+:root[data-skin=grey] .c.sc.td .dn{color:#222!important;background:color-mix(in srgb,var(--dc) 70%,#fff)!important}
 :root[data-skin=grey] #panel,:root[data-skin=grey] #sheet{background:rgba(72,72,75,.86)}
 :root[data-skin=grey] .tabs{background:rgba(60,60,63,.7)}
 :root[data-skin=grey] .tile:not(.x),:root[data-skin=grey] .list,:root[data-skin=grey] .card2,:root[data-skin=grey] .grp,:root[data-skin=grey] input,:root[data-skin=grey] select,:root[data-skin=grey] textarea,:root[data-skin=grey] .chip,:root[data-skin=grey] .tb,:root[data-skin=grey] .nowbar button,:root[data-skin=grey] .btn.g,:root[data-skin=grey] .btn.d,:root[data-skin=grey] .delta{background:rgba(255,255,255,.1)!important;border-color:rgba(255,255,255,.16)!important}
@@ -560,9 +566,10 @@ function renderGrid(){
   let h='';
   for(let i=0;i<cells;i++){const dt=new Date(y,m,1-off+i),k=key(dt.getFullYear(),dt.getMonth(),dt.getDate()),H=hol(dt.getFullYear()),o=S.days[k]||{},t=T(eff(k)),we=dt.getDay()===0||dt.getDay()===6;
     const fill=t&&t.k!=='off'&&(S.bubbles||t.k!=='work');
-    const cls=['c',ui.rStart===k?'rs':'',i>=cells-7?'lr':'',dt.getMonth()!==m?'out':'',we?'we':'',k===TODAY?'td':'',fill?'fill':''].filter(Boolean).join(' ');
-    const bd=t&&t.k!=='off'?`<em class="bd${+t.nh>0?' r':''}" style="${sty(t)}">${esc(t.c)}</em>`:'';
-    h+=`<button class="${cls}" data-k="${k}" style="${fill?'--tint:'+t.col:''}" aria-label="${dt.getDate()} ${MN[dt.getMonth()]}${t?', '+esc(t.n):''}${H[k]?', '+H[k]:''}"><span class="dn${H[k]?' h':''}">${dt.getDate()}</span>${bd}${o.ot?`<i>+${fmt(o.ot)}</i>`:''}${o.note?'<u></u>':''}</button>`}
+    const sc=t&&t.k==='work'&&!S.bubbles;
+    const cls=['c',sc?'sc':'',ui.rStart===k?'rs':'',i>=cells-7?'lr':'',dt.getMonth()!==m?'out':'',we?'we':'',k===TODAY?'td':'',fill?'fill':''].filter(Boolean).join(' ');
+    const bd=t&&t.k!=='off'&&!sc?`<em class="bd${+t.nh>0?' r':''}" style="${sty(t)}">${esc(t.c)}</em>`:'';
+    h+=`<button class="${cls}" data-k="${k}" style="${fill?'--tint:'+t.col:''}${sc?'--dc:'+t.col:''}" aria-label="${dt.getDate()} ${MN[dt.getMonth()]}${t?', '+esc(t.n):''}${H[k]?', '+H[k]:''}"><span class="dn${H[k]?' h':''}">${dt.getDate()}</span>${bd}${o.ot?`<i>+${fmt(o.ot)}</i>`:''}${o.note?'<u></u>':''}</button>`}
   $('#grid').innerHTML=h;
   $('#team').style.setProperty('--i',+S.team||0);
   const g=$('#grid'),dir=ui.dir||0;ui.dir=0;
