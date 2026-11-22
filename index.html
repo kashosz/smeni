@@ -363,6 +363,7 @@ body.brushing #panel{padding-top:2px}
 <section class="pn" id="settings"><h2>Настройки</h2>
 <p class="sub">Външен вид</p>
 <div class="seg seg2" id="skin" style="margin-right:0"><button data-skin="grey">Графит</button><button data-skin="light">Светъл</button></div>
+<label style="display:flex;align-items:center;gap:10px;font-size:15px;color:var(--ink);margin:12px 4px 0"><input type="checkbox" id="bubl" style="width:22px;min-height:22px"> Цветни полета за дневни и нощни</label>
 <p class="sub">Ротация</p>
 <label for="pat">Смени по ред, разделени със запетая</label>
 <input id="pat" autocomplete="off">
@@ -558,7 +559,7 @@ function renderGrid(){
   const off=(new Date(y,m,1).getDay()+6)%7,n=new Date(y,m+1,0).getDate(),cells=Math.ceil((off+n)/7)*7;
   let h='';
   for(let i=0;i<cells;i++){const dt=new Date(y,m,1-off+i),k=key(dt.getFullYear(),dt.getMonth(),dt.getDate()),H=hol(dt.getFullYear()),o=S.days[k]||{},t=T(eff(k)),we=dt.getDay()===0||dt.getDay()===6;
-    const fill=t&&t.k!=='off';
+    const fill=t&&t.k!=='off'&&(S.bubbles||t.k!=='work');
     const cls=['c',ui.rStart===k?'rs':'',i>=cells-7?'lr':'',dt.getMonth()!==m?'out':'',we?'we':'',k===TODAY?'td':'',fill?'fill':''].filter(Boolean).join(' ');
     const bd=t&&t.k!=='off'?`<em class="bd${+t.nh>0?' r':''}" style="${sty(t)}">${esc(t.c)}</em>`:'';
     h+=`<button class="${cls}" data-k="${k}" style="${fill?'--tint:'+t.col:''}" aria-label="${dt.getDate()} ${MN[dt.getMonth()]}${t?', '+esc(t.n):''}${H[k]?', '+H[k]:''}"><span class="dn${H[k]?' h':''}">${dt.getDate()}</span>${bd}${o.ot?`<i>+${fmt(o.ot)}</i>`:''}${o.note?'<u></u>':''}</button>`}
@@ -655,7 +656,7 @@ function renderSettings(){
   $('#types').innerHTML=S.types.map((t,i)=>`<div class="trow" data-i="${i}"><input type="color" value="${t.col}" data-f="col" aria-label="Цвят"><span class="cd">${esc(t.c)}</span><input value="${esc(t.n)}" data-f="n" aria-label="Име"><input type="number" step="0.5" value="${+t.h||0}" data-f="h" aria-label="Часове"><select data-f="k" aria-label="Вид">${ko.replace(`value="${t.k}"`,`value="${t.k}" selected`)}</select><input type="number" step="0.5" value="${+t.nh||0}" data-f="nh" aria-label="Нощни часове">${t.k==='work'?`<div class="tt"><span>от</span><input type="time" value="${t.from||''}" data-f="from" aria-label="Начало"><span>до</span><input type="time" value="${t.to||''}" data-f="to" aria-label="Край"></div>`:''}</div>`).join('');
   $('#ss').innerHTML=MN.map((n,i)=>`<option value="${i}">${n}</option>`).join('');
   document.querySelectorAll('[data-s]').forEach(el=>{const [a,b]=el.dataset.s.split('.');el.value=S[a][b]??''});
-  $('#holn').checked=!!S.holNorm;{const k=S.skin||'grey';$('#skin').style.setProperty('--i',k==='grey'?0:1);$('#skin').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.skin===k))}
+  $('#holn').checked=!!S.holNorm;$('#bubl').checked=!!S.bubbles;{const k=S.skin||'grey';$('#skin').style.setProperty('--i',k==='grey'?0:1);$('#skin').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.skin===k))}
   $('#nkind').innerHTML=ko;$('#cst').value=+S.compStart||0;$('#snorm').value=S.norm;$('#snf').value=S.nf;
   $('#banner').innerHTML=S.setup?'':'<div class="glass banner">Показана е примерна ротация. <a href="#settings" id="gos">Настрой своята</a></div>';
 }
@@ -757,6 +758,7 @@ document.addEventListener('change',e=>{const t=e.target;
   if(t.id==='va'||t.id==='vc'){const y=t.dataset.y,v=S.vac[y]||(S.vac[y]={a:20,c:0});v[t.id==='va'?'a':'c']=parseFloat(t.value)||0;save();renderVac();return}
   if(t.id==='snorm'||t.id==='snf'){S[t.id==='snorm'?'norm':'nf']=parseFloat(String(t.value).replace(',','.'))||0;save();renderMonth();return}
   if(t.id==='cst'){S.compStart=parseFloat(t.value)||0;save();renderComp();return}
+  if(t.id==='bubl'){change(t.checked?'Цветни полета: включени':'Цветни полета: изключени',()=>{S.bubbles=t.checked});renderGrid();return}
   if(t.id==='holn'){S.holNorm=t.checked;save();renderAll();return}
   if(t.dataset.s){const [a,b]=t.dataset.s.split('.'),v=t.value;S[a][b]=b==='cur'?v:(parseFloat(String(v).replace(',','.'))||0);save();renderMonth();return}
   const r=t.closest('.trow[data-i]');if(r&&t.dataset.f){const ty=S.types[+r.dataset.i],f=t.dataset.f;ty[f]=(f==='h'||f==='nh')?(parseFloat(t.value)||0):t.value;renderNow();save();renderGrid();renderBrush();renderMonth();renderVac();renderComp()}
