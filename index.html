@@ -383,9 +383,11 @@ body.brushing #panel{padding-top:2px}
 <p class="sub">Сумирано изчисляване</p>
 <div class="two" style="margin-top:0"><div><label for="sl">Период</label><select id="sl" data-s="sum.len"><option value="1">Без (месечно)</option><option value="2">2 месеца</option><option value="3">3 месеца</option><option value="4">4 месеца</option><option value="6">6 месеца</option><option value="12">12 месеца</option></select></div><div><label for="ss">Започва от</label><select id="ss" data-s="sum.start"></select></div></div>
 <p class="sub">Заплата (за сметката)</p>
-<div class="two" style="margin-top:0"><div><label for="pr">Ставка на час</label><input type="number" id="pr" step="0.01" inputmode="decimal" data-s="pay.rate" placeholder="0"></div><div><label for="pc">Валута</label><select id="pc" data-s="pay.cur"><option>€</option><option>лв</option></select></div></div>
-<div class="two"><div><label for="pn">Добавка нощен труд / час</label><input type="number" id="pn" step="0.01" inputmode="decimal" data-s="pay.night"></div><div><label for="ps">Добавка за стаж %</label><input type="number" id="ps" step="0.1" inputmode="decimal" data-s="pay.sen"></div></div>
-<div class="two"><div><label for="ph">Празник: добавка %</label><input type="number" id="ph" step="1" data-s="pay.hol"></div><div><label for="po">Извънреден: добавка %</label><input type="number" id="po" step="1" data-s="pay.ot"></div></div>
+<div class="two" style="margin-top:0"><div><label for="psal">Основна месечна заплата</label><input type="number" id="psal" step="0.01" inputmode="decimal" data-s="pay.sal" placeholder="0"></div><div><label for="pc">Валута</label><select id="pc" data-s="pay.cur"><option>€</option><option>лв</option></select></div></div>
+<div class="two"><div><label for="pn">Добавка нощен труд / час</label><input type="number" id="pn" step="0.01" inputmode="decimal" data-s="pay.night"></div><div><label for="ps">ТС и ПО (стаж) %</label><input type="number" id="ps" step="0.1" inputmode="decimal" data-s="pay.sen"></div></div>
+<div class="two"><div><label for="po">Извънреден: добавка %</label><input type="number" id="po" step="1" data-s="pay.ot"></div><div><label for="ph">Празник: добавка %</label><input type="number" id="ph" step="1" data-s="pay.hol"></div></div>
+<div class="two"><div><label for="pv">Отпуск: на час</label><input type="number" id="pv" step="0.01" inputmode="decimal" data-s="pay.vac" placeholder="= ставката"></div><div><label for="pe">Други добавки / час</label><input type="number" id="pe" step="0.01" inputmode="decimal" data-s="pay.extra" placeholder="0"></div></div>
+<p class="msg">Ставката на час = заплата ÷ нормата на месеца. „Отпуск: на час“ е от фиша (сумата за отпуск ÷ часовете).</p>
 <p class="sub">Компенсации</p>
 <label for="cst">Начален баланс в часове</label>
 <input type="number" id="cst" step="0.5">
@@ -620,14 +622,17 @@ function sumCard(){const L=+S.sum.len||1;if(L<2)return'';const st=+S.sum.start||
   <div class="li"><span class="n">По график до края</span><span class="v">${f1(W)} ч</span></div>
   <div class="li"><span class="n">${diff>=0?'Извънредни в края':'Недостиг в края'}</span><span class="v" style="color:${diff<0?'var(--red)':'var(--coral)'}">${diff>0?'+':''}${f1(diff)} ч</span></div></div>
   <p class="note2">Към днес си ${dd>=0?'с '+f1(dd)+' ч над':'с '+f1(-dd)+' ч под'} нормата за изминалите дни.</p></div>`}
-function payCard(){const P=S.pay,r=+P.rate||0;if(!r)return `<div class="card2"><h3>Очаквана заплата</h3><p class="note2" style="margin:0">Въведи ставката си на час в <button class="lnk" data-tab2="settings">Настройки</button>, за да видиш сметката.</p></div>`;
+function payCard(){const P=S.pay,sal=+P.sal||0,rate0=+P.rate||0;
+  if(!sal&&!rate0)return `<div class="card2"><h3>Очаквана заплата</h3><p class="note2" style="margin:0">Въведи основната си заплата в <button class="lnk" data-tab2="settings">Настройки</button>, за да видиш сметката.</p></div>`;
   const {y,m}=ui,a=sumRange(key(y,m,1),key(y,m,new Date(y,m+1,0).getDate())),cur=esc(P.cur||'€'),f2=v=>(Math.round(v*100)/100).toFixed(2).replace('.',',');
-  const basePay=(a.wh-a.ot-a.vacH-a.sickH+a.wn)*r,otPay=a.ot*r*(1+(+P.ot||0)/100),night=a.nightH*(+P.night||0),holPay=a.holH*r*((+P.hol||0)/100),vacPay=a.vacH*r,sen=(basePay+vacPay)*((+P.sen||0)/100);
-  const gross=basePay+vacPay+otPay+night+holPay+sen,net=gross*(1-.1378)*.9;
-  const row=(n,v)=>v?`<div class="li"><span class="n">${n}</span><span class="v">${f2(v)} ${cur}</span></div>`:'';
-  return `<div class="card2"><h3>Очаквана заплата за ${MN[m].toLowerCase()}</h3><div class="pay">${f2(gross)} <small>${cur} бруто</small></div><div style="font-size:14px;color:var(--mute);margin-top:2px">≈ ${f2(net)} ${cur} нето</div>
-  <div class="list">${row(`Часове (${fmt(a.wh-a.ot-a.vacH-a.sickH+a.wn)} × ${f2(r)})`,basePay)}${row('Платен отпуск (прибл.)',vacPay)}${row('Нощен труд',night)}${row('Работа на празник',holPay)}${row('Извънредни',otPay)}${row('Добавка за стаж',sen)}</div>
-  <p class="note2">Приблизително, без болничните (тях ги плаща НОИ). Нетото е с 13,78% осигуровки и 10% данък; реалният фиш може да се различава.</p></div>`}
+  const N=a.norm,leaveH=a.vacH+a.sickH,hr=sal?(N?sal/N:0):rate0;
+  const worked=a.wh-a.vacH-a.sickH+a.wn,cap=Math.max(0,N-leaveH),regH=Math.min(worked,cap),overH=Math.max(0,worked-cap);
+  const base=regH*hr,sen=base*((+P.sen||0)/100),night=a.nightH*(+P.night||0),over=overH*hr*(1+(+P.ot||0)/100),hol=a.holH*hr*((+P.hol||0)/100),vac=a.vacH*(+P.vac||hr),extra=regH*(+P.extra||0);
+  const gross=base+sen+night+over+hol+vac+extra,net=gross*(1-.1378)*.9;
+  const row=(n,h,v)=>v?`<div class="li"><span class="n">${n}${h!=null?` <small style="color:var(--mute)">(${fmt(Math.round(h*100)/100)} ч)</small>`:''}</span><span class="v">${f2(v)} ${cur}</span></div>`:'';
+  return `<div class="card2"><h3>Очаквана заплата за ${MN[m].toLowerCase()}</h3><div class="pay">${f2(gross)} <small>${cur} бруто</small></div><div style="font-size:14px;color:var(--mute);margin-top:2px">≈ ${f2(net)} ${cur} нето · ${f2(hr)} ${cur}/ч</div>
+  <div class="list">${row('Индивидуална заплата',regH,base)}${row(`ТС и ПО (${fmt(+P.sen||0)}%)`,null,sen)}${row('Нощен труд',a.nightH,night)}${row('Извънреден над нормата',overH,over)}${row('Работа на празник',a.holH,hol)}${row('Редовен отпуск',a.vacH,vac)}${row('Други добавки',regH,extra)}</div>
+  <p class="note2">Като във фиша: заплатата се плаща за нормата минус отпуска, всичко отработено над това е извънреден труд. Без болнични (НОИ) и еднократни суми. Нетото е приблизително (13,78% осигуровки, 10% данък).</p></div>`}
 function renderVac(){
   const y=ui.y,v=S.vac[y]||{a:20,c:0},used=vacUsed(y),tot=(+v.a||0)+(+v.c||0),left=tot-used;
   const C=2*Math.PI*52,fr=tot?Math.max(0,Math.min(1,left/tot)):0;
