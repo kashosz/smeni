@@ -338,7 +338,7 @@ body.brushing #panel{padding-top:2px}
 
 /* ---- light & depth: one light source from the top-left (moves slightly with the phone) ---- */
 :root{--lx:0;--ly:0}
-.glass:not(.tabs):not(#panel):not(#sheet):not(#quick):not(#toast):not(.chip){position:relative}
+.glass:not(.tabs):not(#panel):not(#sheet):not(#quick):not(#toast):not(.chip):not(#plan){position:relative}
 .glass{box-shadow:
   inset 0 1.5px 0 rgba(255,255,255,.35),
   inset 0 -1px 0 rgba(0,0,0,.18),
@@ -348,7 +348,8 @@ body.brushing #panel{padding-top:2px}
   background:radial-gradient(120% 70% at calc(20% + var(--lx)*25%) calc(0% + var(--ly)*15%),rgba(255,255,255,.18),transparent 55%),
              linear-gradient(180deg,rgba(255,255,255,.07),transparent 40%,rgba(0,0,0,.08))}
 .cal>*,.navc>*,.card>*,.banner>*{position:relative;z-index:1}
-#toast.glass::before,#quick.glass::before,#panel::before,#sheet::before{display:none!important}
+#toast.glass::before,#quick.glass::before,#panel::before,#sheet::before,#plan::before{display:none!important}
+body.planning #toast,body.brushing #toast{bottom:calc(96px + var(--pb,0px) + env(safe-area-inset-bottom))}
 /* calendar surface: slightly recessed well inside the raised card */
 #grid{border-radius:18px;box-shadow:inset 0 2px 6px rgba(0,0,0,.16),inset 0 -1px 0 rgba(255,255,255,.08)}
 /* raised round buttons */
@@ -381,6 +382,28 @@ body.brushing #panel{padding-top:2px}
 .btn:active{box-shadow:inset 0 3px 8px rgba(0,0,0,.3)!important}
 #sheet,#panel{box-shadow:inset 0 1.5px 0 rgba(255,255,255,.3),0 -10px 40px rgba(0,0,0,.3)!important}
 .grab{box-shadow:inset 0 1px 2px rgba(0,0,0,.3),0 1px 0 rgba(255,255,255,.2)}
+
+/* ---- usability: declutter, plan bar, tips, quick picker grid ---- */
+#st{display:none!important}
+.nowbar{margin-top:10px;margin-bottom:10px}
+.top .mt{min-height:44px;align-items:center}
+#quick{display:grid!important;grid-template-columns:repeat(5,44px);gap:6px;border-radius:24px!important;padding:8px!important}
+#quick[hidden]{display:none!important}
+#quick button.more{--b:#888;font-size:20px;letter-spacing:1px}
+#plan{position:fixed;left:8px;right:8px;bottom:calc(80px + env(safe-area-inset-bottom));max-width:704px;margin:0 auto;z-index:4;padding:6px 16px 14px;border-radius:26px;background:light-dark(rgba(246,247,250,.86),rgba(60,60,63,.9))}
+:root[data-skin=grey] #plan{background:rgba(72,72,75,.9)}
+#plan .grab{margin:0 auto 8px}
+#plan h3{margin:0 0 4px;font-size:17px}#plan p{margin:0;font-size:14px;color:var(--mute)}
+#plan .two{margin-top:10px}
+body.planning .app{padding-bottom:calc(88px + var(--pb,0px) + env(safe-area-inset-bottom))}
+.c.pr .dn{outline:2.5px solid var(--coral);outline-offset:2px;border-radius:50%}
+.c.pin::after{display:none}.c.pin{background:color-mix(in srgb,#14a3a3 18%,transparent)!important}
+#tips{position:fixed;inset:0;z-index:30}
+#tips .spot{position:fixed;border-radius:22px;box-shadow:0 0 0 9999px rgba(0,0,0,.6);transition:all .45s cubic-bezier(.22,1,.36,1);pointer-events:none}
+#tips .tipb{position:fixed;left:16px;right:16px;max-width:420px;margin:0 auto;padding:16px;border-radius:20px;background:light-dark(#fff,#2c2c2e);color:var(--ink);box-shadow:0 20px 40px rgba(0,0,0,.35);transition:top .45s cubic-bezier(.22,1,.36,1)}
+:root[data-skin=grey] #tips .tipb{background:#3a3a3d;color:#fff}
+#tips p{margin:0 0 12px;font-size:16px;line-height:1.45}
+.tipn{display:flex;align-items:center;gap:8px}.tipn span{flex:1;font-size:13px;color:var(--mute)}.tipn .btn{min-height:40px;font-size:14px}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}.c,#sheet,.ring .pr{transition:none;animation:none}}
 </style></head><body>
 <svg width="0" height="0" style="position:absolute"><defs><linearGradient id="vg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b7a6f5"/><stop offset=".5" stop-color="#f59a86"/><stop offset="1" stop-color="#8fdcb2"/></linearGradient></defs></svg>
@@ -392,7 +415,7 @@ body.brushing #panel{padding-top:2px}
 <button class="rb" id="fs" aria-label="Цял екран"><svg viewBox="0 0 24 24"><path id="fsi" d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button></div>
 <div class="nowbar" id="nowbar"></div>
 <div id="banner"></div>
-<div class="bar2"><div class="seg" id="team" role="group" aria-label="Екип"><button data-team="0">см.А</button><button data-team="1">см.Б</button><button data-team="2">см.В</button><button data-team="3">см.Г</button></div><button class="pill" id="today">Днес</button></div>
+
 <div class="glass cal">
 <div class="wd"><span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Нд</span></div>
 <div id="grid"></div>
@@ -402,11 +425,13 @@ body.brushing #panel{padding-top:2px}
 
 <div id="panel" class="glass" hidden>
 <div class="ph"><div class="grab"></div><button class="rb sm" id="pclose" aria-label="Затвори"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
-<section class="pn" id="p-brush"><h2>Бързо попълване</h2><div class="seg seg2" id="rmode"><button data-rm="0">По един ден</button><button data-rm="1">Период от–до</button></div><div class="brush" id="brush"></div><p id="hint"></p></section>
+<section class="pn" id="p-brush"><h2>Смени</h2><div class="seg seg2" id="rmode"><button data-rm="0">По един ден</button><button data-rm="1">Период от–до</button></div><div class="brush" id="brush"></div><p id="hint"></p></section>
 <section class="pn" id="month"></section>
 <section class="pn" id="vac"></section>
 <section class="pn" id="comp"></section>
 <section class="pn" id="settings"><h2>Настройки</h2>
+<p class="sub">Екип (смяна)</p>
+<div class="seg" id="team" role="group" aria-label="Екип" style="margin-bottom:4px"><button data-team="0">см.А</button><button data-team="1">см.Б</button><button data-team="2">см.В</button><button data-team="3">см.Г</button></div>
 <p class="sub">Външен вид</p>
 <div class="seg seg2" id="skin" style="margin-right:0"><button data-skin="grey">Графит</button><button data-skin="light">Светъл</button></div>
 <label style="display:flex;align-items:center;gap:10px;font-size:15px;color:var(--ink);margin:12px 4px 0"><input type="checkbox" id="afs" style="width:22px;min-height:22px"> Винаги на цял екран</label>
@@ -438,6 +463,7 @@ body.brushing #panel{padding-top:2px}
 <p class="sub">Компенсации</p>
 <label for="cst">Начален баланс в часове</label>
 <input type="number" id="cst" step="0.5">
+<button class="btn g" id="tipsagain" style="width:100%;margin-top:16px">Покажи подсказките отново</button>
 <p class="sub">Резервно копие</p>
 <p class="msg" style="margin-top:-4px">Данните се пазят само на този телефон. Свали си копие от време на време и преди смяна на телефона.</p>
 <div class="two" style="margin-top:0"><button class="btn" id="bfile">Свали файл</button><label class="btn g" style="display:grid;place-items:center;margin:0;color:var(--ink);font-size:16px">Зареди файл<input type="file" id="bload" accept=".json,application/json" hidden></label></div>
@@ -447,11 +473,13 @@ body.brushing #panel{padding-top:2px}
 </section>
 </div>
 
-<nav class="tabs glass" aria-label="Раздели"><button class="tab" data-tab="brush"><svg viewBox="0 0 24 24"><path d="M4 20l4-1L19 8l-3-3L5 16zM14 7l3 3"/></svg><span>Попълни</span></button><button class="tab" data-tab="month"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3 2"/></svg><span>Часове</span></button><button class="tab" data-tab="vac"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></svg><span>Отпуск</span></button><button class="tab" data-tab="comp"><svg viewBox="0 0 24 24"><path d="M7 20V4M3 8l4-4 4 4M17 4v16M13 16l4 4 4-4"/></svg><span>Компенс.</span></button><button class="tab" data-tab="settings"><svg viewBox="0 0 24 24"><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/></svg><span>Настройки</span></button></nav>
+<nav class="tabs glass" aria-label="Раздели"><button class="tab" data-tab="brush"><svg viewBox="0 0 24 24"><path d="M4 20l4-1L19 8l-3-3L5 16zM14 7l3 3"/></svg><span>Смени</span></button><button class="tab" data-tab="month"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3 2"/></svg><span>Часове</span></button><button class="tab" data-tab="vac"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></svg><span>Отпуск</span></button><button class="tab" data-tab="comp"><svg viewBox="0 0 24 24"><path d="M7 20V4M3 8l4-4 4 4M17 4v16M13 16l4 4 4-4"/></svg><span>Компенс.</span></button><button class="tab" data-tab="settings"><svg viewBox="0 0 24 24"><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/></svg><span>Настройки</span></button></nav>
 
 <div id="scrim" hidden></div>
 <div id="quick" class="glass" hidden></div>
 <div id="toast" hidden role="status"></div>
+<div id="plan" class="glass" hidden><div class="grab"></div><div id="planbody"></div></div>
+<div id="tips" hidden><div class="spot"></div><div class="tipb"><p id="tipt"></p><div class="tipn"><span id="tipc"></span><button class="btn g" id="tipskip">Пропусни</button><button class="btn" id="tipnext">Напред</button></div></div></div>
 <div id="sheet" class="glass" hidden role="dialog" aria-modal="true" aria-labelledby="sdate">
 <div class="grab"></div>
 <p id="sdate"></p><div id="shol"></div>
@@ -609,7 +637,8 @@ function renderGrid(){
   let h='';
   for(let i=0;i<cells;i++){const dt=new Date(y,m,1-off+i),k=key(dt.getFullYear(),dt.getMonth(),dt.getDate()),H=hol(dt.getFullYear()),o=S.days[k]||{},t=T(eff(k)),we=dt.getDay()===0||dt.getDay()===6;
     const fill=t&&t.k!=='off'&&(S.bubbles||t.k!=='work');
-    const cls=['c',ui.rStart===k?'rs':'',i>=cells-7?'lr':'',dt.getMonth()!==m?'out':'',we?'we':'',k===TODAY?'td':'',fill?'fill':''].filter(Boolean).join(' ');
+    const inPlan=ui.plan&&ui.plan.a&&k>=ui.plan.a&&k<=(ui.plan.b||ui.plan.a);
+    const cls=['c',inPlan?'pin':'',ui.plan&&(ui.plan.a===k||ui.plan.b===k)?'pr':'',ui.rStart===k?'rs':'',i>=cells-7?'lr':'',dt.getMonth()!==m?'out':'',we?'we':'',k===TODAY?'td':'',fill?'fill':''].filter(Boolean).join(' ');
     const bd=t&&t.k!=='off'?`<em class="bd${+t.nh>0?' r':''}" style="${sty(t)}">${esc(t.c)}</em>`:'';
     h+=`<button class="${cls}" data-k="${k}" style="${fill?'--tint:'+t.col:''}" aria-label="${dt.getDate()} ${MN[dt.getMonth()]}${t?', '+esc(t.n):''}${H[k]?', '+H[k]:''}"><span class="dn${H[k]?' h':''}">${dt.getDate()}</span>${bd}${o.ot?`<i>+${fmt(o.ot)}</i>`:''}${o.note?'<u></u>':''}</button>`}
   $('#grid').innerHTML=h;
@@ -685,8 +714,27 @@ function renderVac(){
   const C=2*Math.PI*52,fr=tot?Math.max(0,Math.min(1,left/tot)):0;
   $('#vac').innerHTML=`<h2>Отпуск ${y}</h2><div class="vac"><div class="ring"><svg viewBox="0 0 120 120"><circle class="tr" cx="60" cy="60" r="52"/><circle class="pr" cx="60" cy="60" r="52" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-fr)}"/></svg><div><b>${left}</b><span>остават</span></div></div>
   <div class="side"><div class="list" style="margin-top:0"><div class="li"><span class="n">Общо</span><span class="v">${tot}</span></div><div class="li"><span class="n">Използвани</span><span class="v">${used}</span></div></div></div></div>
+  <button class="btn" id="planvac" style="width:100%;margin-top:14px;min-height:52px;font-size:17px">Планирай отпуск</button>
   <div class="two"><div><label for="va">Полагаем за ${y}</label><input type="number" id="va" data-y="${y}" value="${+v.a||0}"></div><div><label for="vc">Прехвърлени от ${y-1}</label><input type="number" id="vc" data-y="${y}" value="${+v.c||0}"></div></div>`;
 }
+/* ---- планиране на отпуск: първи и последен ден, преглед, потвърждение ---- */
+const vacT=()=>S.types.find(t=>t.k==='vac');
+function startPlan(){const t=vacT();if(!t)return;showPanel(null);hideQuick();ui.plan={a:null,b:null};document.body.classList.add('planning');renderPlan();renderGrid()}
+function endPlan(){ui.plan=null;document.body.classList.remove('planning');const P=$('#plan');const a=anim(P,[{transform:'none',opacity:1},{transform:'translateY(40px)',opacity:0}],{duration:220,fill:'forwards'});const f=()=>{P.hidden=true;a&&a.cancel()};if(a)a.onfinish=f;else f();renderGrid()}
+function planTap(k){const p=ui.plan;buzz(8);if(!p.a||p.b){p.a=k;p.b=null}else{if(k<p.a){p.b=p.a;p.a=k}else p.b=k}renderPlan();renderGrid()}
+function planRange(){const p=ui.plan;if(!p||!p.a)return[];return leavePlan(p.a,vacT(),0,p.b||p.a).out}
+function renderPlan(){const P=$('#plan'),p=ui.plan,t=vacT();const was=P.hidden;P.hidden=false;let h;
+  if(!p.a)h=`<h3>Планирай отпуск</h3><p>Докосни <b>първия ден</b> от отпуска в календара.</p><div class="two"><button class="btn g" id="plancancel">Отказ</button><span></span></div>`;
+  else{const plan=planRange(),days=plan.filter(x=>x[1]===t.c).length,snap=JSON.stringify(S),b0=endDiff(p.a),b1=p.b?endDiff(p.b):null;plan.forEach(([x,c])=>setT(x,c));const a0=endDiff(p.a),a1=p.b?endDiff(p.b):null;S=JSON.parse(snap);
+    const f1=v=>(v>0?'+':'')+fmt(Math.round(v*10)/10)+' ч',P0=parse(p.a),P1=p.b?parse(p.b):null;
+    h=`<h3>${short(p.a)}${p.b?' – '+short(p.b):''} · ${days} ${unitW(t,days)}</h3>
+    <p>${p.b?'':'Докосни <b>последния ден</b> (или потвърди само този).<br>'}Остават дни отпуск: ${b0.vacLeft} → <b>${a1?a1.vacLeft:a0.vacLeft}</b></p>
+    <p>Край на ${MN[P0.m].toLowerCase()}: ${f1(b0.mon)} → <b>${f1(a0.mon)}</b>${P1&&P1.m!==P0.m?` · ${MN[P1.m].toLowerCase()}: ${f1(b1.mon)} → <b>${f1(a1.mon)}</b>`:''}</p>
+    <div class="two"><button class="btn g" id="plancancel">Отказ</button><button class="btn" id="planok"${days?'':' disabled'}>Потвърди</button></div>`}
+  $('#planbody').innerHTML=h;document.body.style.setProperty('--pb',P.offsetHeight+'px');
+  if(was)anim(P,[{transform:'translateY(60px)',opacity:0},{transform:'none',opacity:1}],{duration:450,easing:'cubic-bezier(.32,1.2,.6,1)'})}
+function planOk(){const p=ui.plan,t=vacT(),plan=planRange(),n=plan.filter(x=>x[1]===t.c).length;if(!n)return;
+  change(`Отпуск ${short(p.a)}${p.b?' – '+short(p.b):''} · ${n} ${unitW(t,n)}`,()=>plan.forEach(([x,c])=>setT(x,c)));endPlan();renderAll()}
 function compData(){
   let b=+S.compStart||0;const rows=[];
   for(const [k,o] of Object.entries(S.days)){
@@ -745,16 +793,23 @@ function closeDay(){if(closing)return;closing=true;const k=cur;
   if(a)a.onfinish=()=>{done();a.cancel();$('#scrim').getAnimations().forEach(x=>x.cancel())};else done()}
 
 /* ---------- events ---------- */
-let lpFired=false;
+let lpFired=false,mtbT=null;
+function goToday(){ui.year=false;const d=Math.sign((now.getFullYear()-ui.y)*12+now.getMonth()-ui.m);ui.y=now.getFullYear();ui.m=now.getMonth();ui.dir=d;keepUI();renderAll();const c=$(`[data-k="${TODAY}"] .dn`);anim(c,[{transform:'scale(1)'},{transform:'scale(1.3)'},{transform:'none'}],{duration:500,easing:SP,fill:'none'})}
 document.addEventListener('click',e=>{
   if(lpFired){lpFired=false;e.preventDefault();return}
   const el=e.target.closest('button,a');if(!el)return;
   if(el.closest('#quick')){quickPick(el);return}
   buzz(7);
   if(el.id==='undo'||el.id==='ubtn'){doUndo();return}
+  if(el.id==='planvac'){startPlan();return}
+  if(el.id==='plancancel'){endPlan();return}
+  if(el.id==='planok'){planOk();return}
+  if(el.id==='tipsagain'){showPanel(null);setTimeout(()=>startTips(),350);return}
+  if(el.id==='tipnext'){tipStep(1);return}
+  if(el.id==='tipskip'){endTips();return}
   if(el.id==='redo'){doRedo();return}
   if(el.dataset.skin){if((S.skin||'grey')===el.dataset.skin)return;change('Външен вид',()=>{S.skin=el.dataset.skin});applySkin();renderSettings();return}
-  if(el.id==='mtb'){setYear(!ui.year);return}
+  if(el.id==='mtb'){if(mtbT){clearTimeout(mtbT);mtbT=null;goToday();return}mtbT=setTimeout(()=>{mtbT=null;setYear(!ui.year)},260);return}
   if(el.dataset.ym!=null){setYear(false,+el.dataset.ym);return}
   if(el.dataset.go){const p=parse(el.dataset.go);const d=Math.sign((p.y-ui.y)*12+p.m-ui.m);ui.year=false;ui.y=p.y;ui.m=p.m;ui.dir=d;keepUI();renderAll();const c=$(`[data-k="${el.dataset.go}"]`);anim(c,[{transform:'scale(1)'},{transform:'scale(1.12)'},{transform:'none'}],{duration:500,easing:SP,fill:'none'});return}
   if(el.dataset.rm!=null){ui.range=el.dataset.rm==='1';ui.rStart=null;renderBrush();renderGrid();return}
@@ -763,6 +818,7 @@ document.addEventListener('click',e=>{
   if(el.id==='today'){ui.year=false;const d=Math.sign((now.getFullYear()-ui.y)*12+now.getMonth()-ui.m);ui.y=now.getFullYear();ui.m=now.getMonth();ui.dir=d;keepUI();renderAll();if(!d){const c=$(`[data-k="${TODAY}"] .dn`);anim(c,[{transform:'scale(1)'},{transform:'scale(1.3)'},{transform:'none'}],{duration:500,easing:SP,fill:'none'})}return}
   if(el.dataset.team!=null){const n=+el.dataset.team;if(n===(+S.team||0))return;change('Екип: см.'+'АБВГ'[n],()=>{S.team=n});renderAll();return}
   if(el.classList.contains('chip')){const c=el.dataset.c;ui.brush=(!c||ui.brush===c)?null:c;ui.rStart=null;keepUI();renderBrush();renderGrid();return}
+  if(el.dataset.k&&ui.plan){planTap(el.dataset.k);return}
   if(el.dataset.k){const k=el.dataset.k;
     if(ui.brush&&ui.range){
       if(!ui.rStart){ui.rStart=k;renderBrush();renderGrid();return}
@@ -771,7 +827,7 @@ document.addEventListener('click',e=>{
       else change('',()=>{for(let x=a;x<=b;x=kadd(x,1)){days++;setT(x,ui.brush)}});
       relabel(`${t.n} ${short(a)} – ${short(b)} · ${['vac','comp','sick'].includes(t.k)?n+' '+unitW(t,n):days+' дни'}`);
       renderAll();$('#grid').querySelectorAll('.c').forEach(c=>{const x=c.dataset.k;if(x>=a&&x<=b)anim(c,[{transform:'scale(.85)',opacity:.4},{transform:'none',opacity:1}],{duration:450,delay:(dnum(x)-dnum(a))*25,easing:SP})});return}
-    if(ui.brush){const o=S.days[k],off=o&&o.t===ui.brush;change(`${short(k)}: ${off?'по график':T(ui.brush).n}`,()=>setT(k,off?null:ui.brush));ui.pop=k;renderAll()}else openDay(k);return}
+    if(ui.brush){const o=S.days[k],off=o&&o.t===ui.brush;change(`${short(k)}: ${off?'по график':T(ui.brush).n}`,()=>setT(k,off?null:ui.brush));ui.pop=k;renderAll()}else showQuick(k,el);return}
   if(el.classList.contains('tb')){const c=el.dataset.c;if(eff(cur)===c)return;change(`${short(cur)}: ${T(c).n}`,()=>setT(cur,c));sheetTypes();anim($(`#stypes .tb[data-c="${CSS.escape(c)}"] b`),[{transform:'scale(.6)'},{transform:'scale(1.15)',offset:.6},{transform:'none'}],{duration:450,easing:SP,fill:'none'});return}
   if(el.id==='mminus'||el.id==='mplus'){const i=$('#mn');i.value=Math.max(1,Math.min(60,(parseInt(i.value)||1)+(el.id==='mplus'?1:-1)));multiPrev();return}
   if(el.id==='mpick'){const t=T(eff(cur)),k=cur;if(!t)return;ui.brush=t.c;ui.range=true;ui.rStart=k;closeDay();setTimeout(()=>{showPanel('brush');renderBrush();renderGrid();toast(`От ${short(k)} — докосни последния ден`)},300);return}
@@ -844,7 +900,25 @@ function showPanel(p){const prev=ui.panel,P=$('#panel'),tabs=$('.tabs');ui.panel
   if(wasHidden)anim(P,[{transform:'translateY(60px) scale(.96)',opacity:0},{transform:'none',opacity:1}],{duration:520,easing:'cubic-bezier(.32,1.2,.6,1)'});
   else if(prev!==p){const d=TABS.indexOf(p)>TABS.indexOf(prev)?1:-1;anim(document.getElementById(id),[{transform:`translateX(${d*30}px)`,opacity:0},{transform:'none',opacity:1}],{duration:380})}
   revealPanel(id);keepUI()}
-ui.open=false;ui.year=false;ui.rStart=null;
+ui.open=false;ui.year=false;ui.rStart=null;ui.plan=null;
+[['#panel',()=>showPanel(null)],['#sheet',()=>closeDay()],['#plan',()=>endPlan()]].forEach(([sel,close])=>{const el=$(sel);let y0=null,dy=0;
+  el.addEventListener('touchstart',e=>{if(el.scrollTop>0&&!e.target.closest('.grab,.ph'))return;y0=e.touches[0].clientY;dy=0},{passive:true});
+  el.addEventListener('touchmove',e=>{if(y0==null)return;dy=e.touches[0].clientY-y0;if(dy>0){el.style.transform=`translateY(${dy*.6}px)`}},{passive:true});
+  el.addEventListener('touchend',()=>{if(y0==null)return;el.style.transform='';if(dy>90)close();y0=null},{passive:true});});
+const TIPS=[
+ ['.cal','Докосни ден и избери смяна: Д, Н, О… <b>Задръж</b> върху ден за всички възможности (извънредни, бележка, отпуск за няколко дни).'],
+ ['#ubtn','Сгреши ли нещо — ↶ отменя последната промяна. Работи и след затваряне на приложението.'],
+ ['.tab[data-tab="vac"]','В „Отпуск“ е бутонът <b>„Планирай отпуск“</b>: избираш първия и последния ден и виждаш колко дни остават и как се променят часовете.'],
+ ['#mtb','Докосни месеца за <b>цялата година</b>. Двойно докосване те връща на <b>днес</b>. Плъзгай календара наляво/надясно за друг месец.'],
+ ['.tabs','Тук са часовете, отпускът, компенсациите и настройките. Панелите се затварят с <b>плъзгане надолу</b>.']];
+let tipI=0;
+function startTips(){tipI=0;$('#tips').hidden=false;tipStep(0)}
+function endTips(){$('#tips').hidden=true;try{localStorage.setItem('wcal_tips','1')}catch(e){}}
+function tipStep(d){tipI+=d;if(tipI>=TIPS.length){endTips();return}const [sel,txt]=TIPS[tipI],el=$(sel);if(!el){tipStep(1);return}
+  const r=el.getBoundingClientRect(),pad=6,sp=$('#tips .spot'),b=$('#tips .tipb');
+  Object.assign(sp.style,{left:(r.left-pad)+'px',top:(r.top-pad)+'px',width:(r.width+pad*2)+'px',height:(r.height+pad*2)+'px'});
+  $('#tipt').innerHTML=txt;$('#tipc').textContent=`${tipI+1} от ${TIPS.length}`;$('#tipnext').textContent=tipI===TIPS.length-1?'Готово':'Напред';
+  const below=r.top+r.height/2<innerHeight/2;b.style.top=below?Math.min(innerHeight-200,r.bottom+16)+'px':Math.max(12,r.top-16-b.offsetHeight)+'px'}
 /* light follows the tilt of the phone, gently */
 if(!RM){let tx=0,ty=0,cx=0,cy=0,raf=0;const root=document.documentElement;
   const tick=()=>{cx+=(tx-cx)*.08;cy+=(ty-cy)*.08;root.style.setProperty('--lx',cx.toFixed(3));root.style.setProperty('--ly',cy.toFixed(3));raf=Math.abs(tx-cx)+Math.abs(ty-cy)>.002?requestAnimationFrame(tick):0};
@@ -853,19 +927,19 @@ updUndo();
 try{new ResizeObserver(()=>{if(ui.panel==='brush'&&!$('#panel').hidden)document.body.style.setProperty('--pb',$('#panel').offsetHeight+'px')}).observe($('#panel'))}catch(e){}
 let qk=null;
 function showQuick(k,cell){qk=k;const q=$('#quick'),cv=eff(k);
-  q.innerHTML=S.types.map(t=>`<button data-qc="${esc(t.c)}" class="${cv===t.c?'on':''}" style="--b:${t.col}" aria-label="${esc(t.n)}">${esc(t.c)}</button>`).join('')+(S.days[k]&&S.days[k].t?'<button data-qc="" class="rv" aria-label="По график">↺</button>':'');
+  q.innerHTML=S.types.map(t=>`<button data-qc="${esc(t.c)}" class="${cv===t.c?'on':''}" style="--b:${t.col}" aria-label="${esc(t.n)}">${esc(t.c)}</button>`).join('')+(S.days[k]&&S.days[k].t?'<button data-qc="" class="rv" aria-label="По график">↺</button>':'')+'<button data-more="1" class="more" aria-label="Още">⋯</button>';
   q.hidden=false;const r=cell.getBoundingClientRect(),qw=q.offsetWidth,qh=q.offsetHeight,W=innerWidth;
   let x=Math.min(W-qw-8,Math.max(8,r.left+r.width/2-qw/2)),y=r.top-qh-8,below=false;if(y<10){y=r.bottom+8;below=true}
   q.style.left=x+'px';q.style.top=y+'px';q.style.setProperty('--ox',(r.left+r.width/2-x)+'px');q.style.setProperty('--oy',below?'0%':'100%');
   anim(q,[{transform:'scale(.4)',opacity:0},{transform:'none',opacity:1}],{duration:380,easing:SP});
   q.querySelectorAll('button').forEach((b,i)=>anim(b,[{transform:'scale(.5)',opacity:0},{transform:'none',opacity:1}],{duration:320,delay:40+i*30,easing:SP}))}
 function hideQuick(){const q=$('#quick');if(q.hidden)return;document.querySelectorAll('.c.lp').forEach(c=>c.classList.remove('lp'));const a=anim(q,[{opacity:1},{transform:'scale(.7)',opacity:0}],{duration:160,fill:'forwards'});const f=()=>{q.hidden=true;a&&a.cancel()};if(a)a.onfinish=f;else f();qk=null}
-function quickPick(b){const k=qk,c=b.dataset.qc;if(k==null)return;buzz(10);change(`${short(k)}: ${c?T(c).n:'по график'}`,()=>setT(k,c||null));hideQuick();ui.pop=k;renderAll()}
+function quickPick(b){const k=qk,c=b.dataset.qc;if(k==null)return;if(b.dataset.more){hideQuick();openDay(k);return}const t0=T(c);if(t0&&['vac','sick','comp'].includes(t0.k)&&c!==eff(k)){hideQuick();openDay(k);setT(k,c);pendLabel=`${short(k)}: ${t0.n}`;save();sheetTypes();toast(`${short(k)}: ${t0.n}`,'undo');return}buzz(10);change(`${short(k)}: ${c?T(c).n:'по график'}`,()=>setT(k,c||null));hideQuick();ui.pop=k;renderAll()}
 document.addEventListener('pointerdown',e=>{if(!$('#quick').hidden&&!e.target.closest('#quick'))hideQuick()},true);
 {let timer=null,sx=0,sy=0;const g=$('#grid');
  g.addEventListener('contextmenu',e=>e.preventDefault());
  g.addEventListener('pointerdown',e=>{const c=e.target.closest('.c');if(!c)return;sx=e.clientX;sy=e.clientY;clearTimeout(timer);
-   timer=setTimeout(()=>{lpFired=true;buzz(18);c.classList.add('lp');showQuick(c.dataset.k,c);setTimeout(()=>{lpFired=false},700)},430)});
+   timer=setTimeout(()=>{if(ui.brush||ui.plan)return;lpFired=true;buzz(18);openDay(c.dataset.k);setTimeout(()=>{lpFired=false},700)},430)});
  const cancel=()=>clearTimeout(timer);
  g.addEventListener('pointermove',e=>{if(Math.abs(e.clientX-sx)>10||Math.abs(e.clientY-sy)>10)cancel()});
  g.addEventListener('pointerup',cancel);g.addEventListener('pointercancel',cancel);g.addEventListener('pointerleave',cancel);}
@@ -874,6 +948,7 @@ document.addEventListener('pointerdown',e=>{if(!$('#quick').hidden&&!e.target.cl
  cal.addEventListener('touchmove',e=>{if(x0==null)return;const t=e.touches[0];dx=t.clientX-x0;const dy=t.clientY-y0;if(lock==null&&(Math.abs(dx)>8||Math.abs(dy)>8))lock=Math.abs(dx)>Math.abs(dy);if(lock&&!RM){g.style.transform=`translateX(${dx*.35}px)`;g.style.opacity=String(1-Math.min(.4,Math.abs(dx)/600))}},{passive:true});
  cal.addEventListener('touchend',()=>{if(x0==null)return;g.style.transform='';g.style.opacity='';if(lock&&Math.abs(dx)>60)goMonth(dx<0?1:-1);x0=null;lock=null},{passive:true});}
 renderAll();showPanel(ui.panel||null);
+try{if(!localStorage.getItem('wcal_tips'))setTimeout(startTips,900)}catch(e){}
 connect();
 if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').then(r=>{r.update().catch(()=>{})}).catch(()=>{});
   let reloaded=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(reloaded||ui.open)return;reloaded=true;keepUI();location.reload()});}
