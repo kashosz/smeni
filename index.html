@@ -316,6 +316,8 @@ input,select,textarea{background:light-dark(rgba(255,255,255,.6),rgba(255,255,25
 <p class="msg" id="tmsg"></p>
 <p class="sub">Норма и нощен труд</p>
 <div class="two" style="margin-top:0"><div><label for="snorm">Норма часове на ден</label><input type="number" id="snorm" step="0.5"></div><div><label for="snf">Коефициент нощни</label><input type="number" id="snf" step="0.001"></div></div>
+<label style="display:flex;align-items:center;gap:10px;font-size:15px;color:var(--ink);margin:14px 4px 0"><input type="checkbox" id="holn" style="width:22px;min-height:22px"> Празниците намаляват нормата</label>
+<p class="msg" style="margin-top:2px">Изключено = като старото приложение „Календар смени“: нормата е 8 ч × всички дни от понеделник до петък.</p>
 <p class="sub">Сумирано изчисляване</p>
 <div class="two" style="margin-top:0"><div><label for="sl">Период</label><select id="sl" data-s="sum.len"><option value="1">Без (месечно)</option><option value="2">2 месеца</option><option value="3">3 месеца</option><option value="4">4 месеца</option><option value="6">6 месеца</option><option value="12">12 месеца</option></select></div><div><label for="ss">Започва от</label><select id="ss" data-s="sum.start"></select></div></div>
 <p class="sub">Заплата (за сметката)</p>
@@ -417,7 +419,7 @@ const tname=k=>{const t=T(eff(k));return t?t.n:'—'};
 function buzz(ms){try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}}
 /* per-day hours */
 function dayCalc(k){const d=kdate(k),w=d.getDay(),H=hol(d.getFullYear()),c=eff(k),t=T(c),tb=T(base(k)),o=S.days[k]||{},r={norm:0,sh:0,sn:0,wh:0,wn:0,ot:+o.ot||0,nightH:0,holH:0,hw:0,vacH:0,sickH:0,leave:0,c};
-  const wd=w!==0&&w!==6&&!H[k];
+  const wd=w!==0&&w!==6&&!(S.holNorm&&H[k]);
   if(wd)r.norm=+S.norm||0;
   if(tb&&tb.k==='work'){r.sh=+tb.h||0;r.sn=nb(tb)}
   if(t&&t.k==='work'){r.wh=+t.h||0;r.wn=nb(t);r.nightH=+t.nh||0;if(H[k]){r.holH=+t.h||0;r.hw=1}}
@@ -436,7 +438,7 @@ function sumRange(k0,k1,upto){const a={norm:0,sh:0,sn:0,wh:0,wn:0,ot:0,nightH:0,
 function endDiff(k){const p=parse(k),L=+S.sum.len||1,m=sumRange(key(p.y,p.m,1),key(p.y,p.m,new Date(p.y,p.m+1,0).getDate()));let per=null;
   if(L>1){const st=+S.sum.start||0;let m0=p.m-((((p.m-st)%L)+L)%L),y0=p.y;if(m0<0){m0+=12;y0--}let m1=m0+L-1,y1=y0;if(m1>11){m1-=12;y1++}const a=sumRange(key(y0,m0,1),key(y1,m1,new Date(y1,m1+1,0).getDate()));per={v:a.wh+a.wn-a.norm,lbl:`${MS[m0]}–${MS[m1]}`}}
   return {mon:m.wh+m.wn-m.norm,per,vacLeft:(()=>{const v=S.vac[p.y]||{a:20,c:0};return (+v.a||0)+(+v.c||0)-vacUsed(p.y)})()}}
-function isWD(k){const d=kdate(k),w=d.getDay();return w!==0&&w!==6&&!hol(d.getFullYear())[k]}
+function isWD(k){const d=kdate(k),w=d.getDay();return w!==0&&w!==6&&!(S.holNorm&&hol(d.getFullYear())[k])}
 function vacUsed(y){return Object.keys(S.days).filter(x=>x.startsWith(y+'-')&&(T(S.days[x].t)||{}).k==='vac'&&isWD(x)).length}
 const offCode=()=>(S.types.find(t=>t.k==='off')||{}).c;
 /* план за няколко дни: отпуск в работни дни (почивните вътре стават почивка), болничен в календарни дни, иначе смени */
@@ -519,7 +521,7 @@ function renderMonth(){
   const {y,m}=ui,n=new Date(y,m+1,0).getDate(),A=sumRange(key(y,m,1),key(y,m,n)),{norm,sh,sn,wh,wn,ot,hw,cnt,leave}=A;
   const diff=wh+wn-norm,f1=v=>fmt(Math.round(v*10)/10),plus=v=>v?`<small>+${f1(v)}</small>`:'';
   $('#month').innerHTML=`<h2>Часове за ${MN[m].toLowerCase()}</h2>
-  <div class="tiles"><div class="tile"><span>Норма</span><b>${f1(norm)}</b></div><div class="tile"><span>По график</span><b>${f1(sh)}${plus(sn)}</b></div><div class="tile"><span>Отработени</span><b>${f1(wh)}${plus(wn)}</b></div></div>
+  <div class="tiles"><div class="tile"><span>Норма</span><b>${f1(norm)}</b></div><div class="tile"><span>По график</span><b>${f1(sh)}${sn?`<small>+${fmt(Math.round(sn))}</small>`:''}</b></div><div class="tile"><span>Отработени</span><b>${f1(wh)}${wn?`<small>+${fmt(Math.ceil(wn*10-1e-9)/10)}</small>`:''}</b></div></div>
   <span class="delta" style="--c:${diff<0?'var(--red)':'var(--ink)'}">${diff>0?'+':''}${f1(diff)} ч ${diff<0?'под':'над'} нормата</span>
   <div class="list">${S.types.filter(t=>cnt[t.c]).map(t=>`<div class="li"><i class="dot" style="${sty(t)}"></i><span class="n">${esc(t.n)}</span><span class="v">${cnt[t.c]}</span></div>`).join('')}
   <div class="li"><span class="n">Извънредни</span><span class="v">${ot?'+'+fmt(ot):'0'} ч</span></div><div class="li"><span class="n">Смени на празник</span><span class="v">${hw}</span></div></div>
@@ -573,6 +575,7 @@ function renderSettings(){
   $('#types').innerHTML=S.types.map((t,i)=>`<div class="trow" data-i="${i}"><input type="color" value="${t.col}" data-f="col" aria-label="Цвят"><span class="cd">${esc(t.c)}</span><input value="${esc(t.n)}" data-f="n" aria-label="Име"><input type="number" step="0.5" value="${+t.h||0}" data-f="h" aria-label="Часове"><select data-f="k" aria-label="Вид">${ko.replace(`value="${t.k}"`,`value="${t.k}" selected`)}</select><input type="number" step="0.5" value="${+t.nh||0}" data-f="nh" aria-label="Нощни часове">${t.k==='work'?`<div class="tt"><span>от</span><input type="time" value="${t.from||''}" data-f="from" aria-label="Начало"><span>до</span><input type="time" value="${t.to||''}" data-f="to" aria-label="Край"></div>`:''}</div>`).join('');
   $('#ss').innerHTML=MN.map((n,i)=>`<option value="${i}">${n}</option>`).join('');
   document.querySelectorAll('[data-s]').forEach(el=>{const [a,b]=el.dataset.s.split('.');el.value=S[a][b]??''});
+  $('#holn').checked=!!S.holNorm;
   $('#nkind').innerHTML=ko;$('#cst').value=+S.compStart||0;$('#snorm').value=S.norm;$('#snf').value=S.nf;
   $('#banner').innerHTML=S.setup?'':'<div class="glass banner">Показана е примерна ротация. <a href="#settings" id="gos">Настрой своята</a></div>';
 }
@@ -670,6 +673,7 @@ document.addEventListener('change',e=>{const t=e.target;
   if(t.id==='va'||t.id==='vc'){const y=t.dataset.y,v=S.vac[y]||(S.vac[y]={a:20,c:0});v[t.id==='va'?'a':'c']=parseFloat(t.value)||0;save();renderVac();return}
   if(t.id==='snorm'||t.id==='snf'){S[t.id==='snorm'?'norm':'nf']=parseFloat(String(t.value).replace(',','.'))||0;save();renderMonth();return}
   if(t.id==='cst'){S.compStart=parseFloat(t.value)||0;save();renderComp();return}
+  if(t.id==='holn'){S.holNorm=t.checked;save();renderAll();return}
   if(t.dataset.s){const [a,b]=t.dataset.s.split('.'),v=t.value;S[a][b]=b==='cur'?v:(parseFloat(String(v).replace(',','.'))||0);save();renderMonth();return}
   const r=t.closest('.trow[data-i]');if(r&&t.dataset.f){const ty=S.types[+r.dataset.i],f=t.dataset.f;ty[f]=(f==='h'||f==='nh')?(parseFloat(t.value)||0):t.value;renderNow();save();renderGrid();renderBrush();renderMonth();renderVac();renderComp()}
 });
